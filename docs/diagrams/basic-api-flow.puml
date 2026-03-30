@@ -1,0 +1,28 @@
+@startuml basic-api-flow
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBackgroundColor #f5f5f5
+
+title 기본 API 흐름 (DB 접근만 있는 경우)\n예시: POST /api/v1/checkins (안부 확인)
+
+actor Client
+participant "CheckinController" as Controller
+participant "CheckinService" as Service
+participant "CheckinRepository" as Repository
+database "Database" as DB
+
+Client -> Controller: POST /api/v1/checkins\n(Authorization: Bearer {token})
+
+Controller -> Service: checkIn(CheckinReqDto)
+
+Service -> Service: ReqDto → Entity 변환
+Service -> Repository: save(Checkin)
+Repository -> DB: INSERT
+DB --> Repository: Checkin (saved)
+Repository --> Service: Checkin
+
+Service -> Service: Entity → CheckinRespDto 변환
+Service --> Controller: CheckinRespDto
+
+Controller --> Client: 200 OK\n{ "success": true, "data": CheckinRespDto }
+
+@enduml

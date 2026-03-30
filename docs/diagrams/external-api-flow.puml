@@ -1,0 +1,51 @@
+@startuml external-api-flow
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBackgroundColor #f5f5f5
+
+title 외부 API 연동 흐름 (OpenFeign 사용)\n예시: POST /api/v1/auth/send-code (SMS 인증코드 발송)
+
+actor Client
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "SmsCodeRepository" as Repository
+database "Database" as DB
+participant "SmsProvider\n<<interface>>" as SmsProvider
+participant "CoolSmsClient\n(OpenFeign)" as FeignClient
+participant "CoolSMS API" as CoolSMS
+
+Client -> Controller: POST /api/v1/auth/send-code\n{ phoneNumber, role }
+
+Controller -> Service: sendCode(SendCodeReqDto)
+
+Service -> Service: 발송 횟수 조회 및 30분 차단 여부 확인
+Service -> Repository: findByPhoneNumber(phoneNumber)
+Repository -> DB: SELECT
+DB --> Repository: SmsCode (or empty)
+Repository --> Service: Optional<SmsCode>
+
+Service -> Service: SmsCode Entity 생성/갱신\n(인증코드 생성, 만료시각 설정)
+Service -> Repository: save(SmsCode)
+Repository -> DB: INSERT/UPDATE
+DB --> Repository: SmsCode (saved)
+Repository --> Service: SmsCode
+
+Service -> SmsProvider: send(phoneNumber, code)
+
+note over SmsProvider
+  인터페이스 — 실제 구현체는
+  MockSmsProvider 또는
+  CoolSmsSmsProvider
+end note
+
+SmsProvider -> FeignClient: CoolSmsRequest
+FeignClient -> CoolSMS: HTTP POST /messages
+CoolSMS --> FeignClient: CoolSmsResponse
+FeignClient --> SmsProvider: CoolSmsResponse
+SmsProvider --> Service: (완료)
+
+Service -> Service: Entity → SendCodeRespDto 변환
+Service --> Controller: SendCodeRespDto
+
+Controller --> Client: 200 OK\n{ "success": true, "data": SendCodeRespDto }
+
+@enduml
