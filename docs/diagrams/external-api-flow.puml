@@ -9,9 +9,9 @@ participant "AuthController" as Controller
 participant "AuthService" as Service
 participant "SmsCodeRepository" as Repository
 database "Database" as DB
-interface "SmsProvider\n<<interface>>" as SmsProvider
+participant "SmsProvider\n<<interface>>" as SmsProvider
 participant "CoolSmsClient\n(OpenFeign)" as FeignClient
-cloud "CoolSMS API" as CoolSMS
+participant "CoolSMS API" as CoolSMS
 
 Client -> Controller: POST /api/v1/auth/send-code\n{ phoneNumber, role }
 
