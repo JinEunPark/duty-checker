@@ -17,6 +17,10 @@ spring:
       hibernate:
         format_sql: true
 
+jwt:
+  secret: duty-checker-secret-key-must-be-at-least-256-bits-long-for-hs256
+  expiration-ms: 86400000  # 24시간
+
 server:
   port: 8080
 
