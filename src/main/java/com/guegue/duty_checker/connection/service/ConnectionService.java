@@ -61,6 +61,12 @@ public class ConnectionService {
         return new AddConnectionRespDto(connection);
     }
 
+    @Transactional
+    public void activatePendingConnections(String guardianPhone, User guardian) {
+        List<Connection> pending = connectionRepository.findByGuardianPhoneAndStatus(guardianPhone, ConnectionStatus.PENDING);
+        pending.forEach(c -> c.connectGuardian(guardian));
+    }
+
     @Transactional(readOnly = true)
     public GetConnectionsRespDto getConnections(String phone) {
         User user = userService.getByPhone(phone);

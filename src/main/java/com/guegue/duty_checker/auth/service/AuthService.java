@@ -8,6 +8,7 @@ import com.guegue.duty_checker.auth.infrastructure.VerifiedPhoneRedisRepository;
 import com.guegue.duty_checker.common.config.JwtProvider;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
+import com.guegue.duty_checker.connection.service.ConnectionService;
 import com.guegue.duty_checker.user.domain.User;
 import com.guegue.duty_checker.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AuthService {
     private final SmsProvider smsProvider;
     private final JwtProvider jwtProvider;
     private final UserService userService;
+    private final ConnectionService connectionService;
     private final PasswordEncoder passwordEncoder;
 
     public SendCodeRespDto sendCode(SendCodeReqDto reqDto) {
@@ -84,6 +86,7 @@ public class AuthService {
                 .build();
         userService.save(user);
         verifiedPhoneRedisRepository.delete(phone);
+        connectionService.activatePendingConnections(phone, user);
 
         return new RegisterRespDto(user);
     }
