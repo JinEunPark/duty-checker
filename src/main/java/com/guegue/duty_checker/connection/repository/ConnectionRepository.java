@@ -13,4 +13,9 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
     List<Connection> findByGuardian(User guardian);
 
     List<Connection> findByStatus(com.guegue.duty_checker.connection.domain.ConnectionStatus status);
+
+    boolean existsBySubjectAndGuardianPhone(User subject, String guardianPhone);
+
+    long countBySubject(User subject);
+
 }
