@@ -20,6 +20,16 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsByPhone(String phone) {
+        return userRepository.existsByPhone(phone);
+    }
+
+    @Transactional
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
     @Transactional
     public void updateFcmToken(String phone, String fcmToken) {
         getByPhone(phone).updateFcmToken(fcmToken);
