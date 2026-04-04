@@ -69,6 +69,14 @@ com.guegue.duty_checker
 - Repository 및 Provider 호출
 - **Entity → RespDto 변환** (변환 책임은 Service)
 - `@Transactional` 적용 — Entity Lazy Loading 주의
+- **도메인 경계 규칙**: 각 Service는 자신의 도메인 Repository만 직접 접근한다. 다른 도메인의 데이터가 필요할 경우 해당 도메인의 Service를 통해 접근한다.
+  ```
+  // 금지 — 다른 도메인 Repository 직접 접근
+  @Autowired UserRepository userRepository; // in ConnectionService
+
+  // 허용 — 다른 도메인 Service를 통해 접근
+  @Autowired UserService userService; // in ConnectionService
+  ```
 
 ### Repository
 - JPA Repository interface
