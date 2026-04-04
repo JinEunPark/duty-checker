@@ -1,6 +1,10 @@
 spring:
   application:
     name: duty-checker
+  data:
+    redis:
+      host: localhost
+      port: 6379
   datasource:
     url: jdbc:h2:mem:duty_checker
     driver-class-name: org.h2.Driver
@@ -16,6 +20,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+jwt:
+  secret: duty-checker-secret-key-must-be-at-least-256-bits-long-for-hs256
+  access-expiration-ms: 3600000     # 1시간
+  refresh-expiration-ms: 2592000000 # 30일
 
 server:
   port: 8080
