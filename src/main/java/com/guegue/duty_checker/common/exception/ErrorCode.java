@@ -30,6 +30,10 @@ public enum ErrorCode {
     CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결 정보를 찾을 수 없습니다"),
     CONNECTION_FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "수정 권한이 없습니다"),
 
+    // CheckIn
+    ALREADY_CHECKED_IN(HttpStatus.CONFLICT, "ALREADY_CHECKED_IN", "오늘은 이미 안부 확인을 했습니다"),
+    CHECK_IN_FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "당사자만 안부 확인이 가능합니다"),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_PHONE_FORMAT", "전화번호 형식이 올바르지 않습니다"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 오류가 발생했습니다");

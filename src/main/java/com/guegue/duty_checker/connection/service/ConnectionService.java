@@ -1,5 +1,7 @@
 package com.guegue.duty_checker.connection.service;
 
+import com.guegue.duty_checker.checkin.dto.GetLatestCheckInRespDto;
+import com.guegue.duty_checker.checkin.service.CheckInService;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
 import com.guegue.duty_checker.connection.domain.Connection;
@@ -23,6 +25,7 @@ public class ConnectionService {
 
     private final ConnectionRepository connectionRepository;
     private final UserService userService;
+    private final CheckInService checkInService;
 
     @Transactional(readOnly = true)
     public GetConnectionsRespDto getConnections(String phone) {
@@ -35,7 +38,10 @@ public class ConnectionService {
             return new GetConnectionsRespDto(Role.SUBJECT, items);
         } else {
             List<ConnectionItemDto> items = connectionRepository.findByGuardian(user).stream()
-                    .map(ConnectionItemDto::forGuardian)
+                    .map(connection -> {
+                        GetLatestCheckInRespDto checkIn = checkInService.getLatestCheckInBySubject(connection.getSubject());
+                        return ConnectionItemDto.forGuardian(connection, checkIn.getLatestCheckedAt(), checkIn.isTodayChecked());
+                    })
                     .toList();
             return new GetConnectionsRespDto(Role.GUARDIAN, items);
         }

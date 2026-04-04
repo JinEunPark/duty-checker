@@ -2,7 +2,6 @@ package com.guegue.duty_checker.connection.dto;
 
 import com.guegue.duty_checker.connection.domain.Connection;
 import com.guegue.duty_checker.connection.domain.ConnectionStatus;
-import com.guegue.duty_checker.user.domain.Role;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
@@ -25,12 +24,12 @@ public class ConnectionItemDto {
         return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), null, null);
     }
 
-    public static ConnectionItemDto forGuardian(Connection connection) {
+    public static ConnectionItemDto forGuardian(Connection connection, ZonedDateTime latestCheckedAt, boolean isTodayChecked) {
         String phone = connection.getSubject().getPhone();
         String name = connection.getGuardianGivenName() != null
                 ? connection.getGuardianGivenName()
                 : phone;
-        return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), null, false);
+        return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), latestCheckedAt, isTodayChecked);
     }
 
     private ConnectionItemDto(Long id, String phone, String name,
