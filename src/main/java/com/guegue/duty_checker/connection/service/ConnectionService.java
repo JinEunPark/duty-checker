@@ -1,0 +1,69 @@
+package com.guegue.duty_checker.connection.service;
+
+import com.guegue.duty_checker.common.exception.BusinessException;
+import com.guegue.duty_checker.common.exception.ErrorCode;
+import com.guegue.duty_checker.connection.domain.Connection;
+import com.guegue.duty_checker.connection.dto.ConnectionItemDto;
+import com.guegue.duty_checker.connection.dto.GetConnectionsRespDto;
+import com.guegue.duty_checker.connection.dto.UpdateConnectionNameReqDto;
+import com.guegue.duty_checker.connection.dto.UpdateConnectionNameRespDto;
+import com.guegue.duty_checker.connection.repository.ConnectionRepository;
+import com.guegue.duty_checker.user.domain.Role;
+import com.guegue.duty_checker.user.domain.User;
+import com.guegue.duty_checker.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ConnectionService {
+
+    private final ConnectionRepository connectionRepository;
+    private final UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public GetConnectionsRespDto getConnections(String phone) {
+        User user = findUser(phone);
+
+        if (user.getRole() == Role.SUBJECT) {
+            List<ConnectionItemDto> items = connectionRepository.findBySubject(user).stream()
+                    .map(ConnectionItemDto::forSubject)
+                    .toList();
+            return new GetConnectionsRespDto(Role.SUBJECT, items);
+        } else {
+            List<ConnectionItemDto> items = connectionRepository.findByGuardian(user).stream()
+                    .map(ConnectionItemDto::forGuardian)
+                    .toList();
+            return new GetConnectionsRespDto(Role.GUARDIAN, items);
+        }
+    }
+
+    @Transactional
+    public UpdateConnectionNameRespDto updateConnectionName(Long connectionId, String phone, UpdateConnectionNameReqDto reqDto) {
+        User user = findUser(phone);
+        Connection connection = connectionRepository.findById(connectionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CONNECTION_NOT_FOUND));
+
+        if (user.getRole() == Role.SUBJECT) {
+            if (!connection.getSubject().getId().equals(user.getId())) {
+                throw new BusinessException(ErrorCode.CONNECTION_FORBIDDEN);
+            }
+            connection.updateSubjectGivenName(reqDto.getName());
+            return UpdateConnectionNameRespDto.forSubject(connection);
+        } else {
+            if (connection.getGuardian() == null || !connection.getGuardian().getId().equals(user.getId())) {
+                throw new BusinessException(ErrorCode.CONNECTION_FORBIDDEN);
+            }
+            connection.updateGuardianGivenName(reqDto.getName());
+            return UpdateConnectionNameRespDto.forGuardian(connection);
+        }
+    }
+
+    private User findUser(String phone) {
+        return userRepository.findByPhone(phone)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+}

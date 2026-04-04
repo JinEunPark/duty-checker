@@ -26,6 +26,10 @@ public enum ErrorCode {
     GUARDIAN_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "GUARDIAN_LIMIT_EXCEEDED", "보호자는 최대 5명까지 등록 가능합니다"),
     GUARDIAN_NOT_FOUND(HttpStatus.NOT_FOUND, "GUARDIAN_NOT_FOUND", "보호자를 찾을 수 없습니다"),
 
+    // Connection
+    CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결 정보를 찾을 수 없습니다"),
+    CONNECTION_FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "수정 권한이 없습니다"),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_PHONE_FORMAT", "전화번호 형식이 올바르지 않습니다"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 오류가 발생했습니다");
