@@ -22,6 +22,11 @@ API 명세는 GitHub Issue에서 관리한다.
      - 제목: 작업 요약 (한 줄)
      - 본문: 작업 배경, 구현 내용, 완료 조건
 2. **Branch 생성**
+   - `main` 브랜치로 이동 후 최신 상태로 pull 받고 브랜치를 생성한다
+     ```
+     git checkout main && git pull origin main
+     git checkout -b feature/{issue-number}
+     ```
    - 이슈 번호 기반으로 브랜치 생성
    - 네이밍: `feature/{issue-number}`
    - 예: `feature/6`
