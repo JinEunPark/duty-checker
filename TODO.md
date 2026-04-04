@@ -16,14 +16,6 @@
 
 ---
 
-## Claude가 처리해야 할 것
-
-- PR #36 (feature/32)에 이슈 #32와 #33이 같이 묶여있음. 규칙상 이슈별 PR이어야 하므로 분리 필요:
-  - feature/32: `POST /connections`만 포함
-  - feature/33: `activatePendingConnections` 로직만 포함 (새 브랜치로 분리)
-
----
-
 ## 코드에서 빠진 것 (구현 필요)
 
 ### 🚨 보호자 추가 API 없음
