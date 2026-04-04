@@ -9,7 +9,6 @@ import com.guegue.duty_checker.common.config.JwtProvider;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
 import com.guegue.duty_checker.user.domain.User;
-import com.guegue.duty_checker.user.repository.UserRepository;
 import com.guegue.duty_checker.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,7 +29,6 @@ public class AuthService {
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final SmsProvider smsProvider;
     private final JwtProvider jwtProvider;
-    private final UserRepository userRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
@@ -75,7 +73,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.PHONE_NOT_VERIFIED);
         }
 
-        if (userRepository.existsByPhone(phone)) {
+        if (userService.existsByPhone(phone)) {
             throw new BusinessException(ErrorCode.ALREADY_REGISTERED);
         }
 
@@ -84,7 +82,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(reqDto.getPassword()))
                 .role(reqDto.getRole())
                 .build();
-        userRepository.save(user);
+        userService.save(user);
         verifiedPhoneRedisRepository.delete(phone);
 
         return new RegisterRespDto(user);
@@ -93,8 +91,7 @@ public class AuthService {
     public LoginRespDto login(LoginReqDto reqDto) {
         String phone = reqDto.getPhone();
 
-        User user = userRepository.findByPhone(phone)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "가입되지 않은 전화번호입니다"));
+        User user = userService.getByPhone(phone);
 
         if (!passwordEncoder.matches(reqDto.getPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
