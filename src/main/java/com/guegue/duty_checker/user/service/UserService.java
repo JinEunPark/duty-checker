@@ -25,6 +25,11 @@ public class UserService {
         return userRepository.existsByPhone(phone);
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Optional<User> findByPhone(String phone) {
+        return userRepository.findByPhone(phone);
+    }
+
     @Transactional
     public User save(User user) {
         return userRepository.save(user);

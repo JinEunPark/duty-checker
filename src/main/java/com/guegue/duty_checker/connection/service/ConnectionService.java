@@ -5,6 +5,9 @@ import com.guegue.duty_checker.checkin.service.CheckInService;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
 import com.guegue.duty_checker.connection.domain.Connection;
+import com.guegue.duty_checker.connection.domain.ConnectionStatus;
+import com.guegue.duty_checker.connection.dto.AddConnectionReqDto;
+import com.guegue.duty_checker.connection.dto.AddConnectionRespDto;
 import com.guegue.duty_checker.connection.dto.ConnectionItemDto;
 import com.guegue.duty_checker.connection.dto.GetConnectionsRespDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionNameReqDto;
@@ -26,6 +29,43 @@ public class ConnectionService {
     private final ConnectionRepository connectionRepository;
     private final UserService userService;
     private final CheckInService checkInService;
+
+    @Transactional
+    public AddConnectionRespDto addConnection(String subjectPhone, AddConnectionReqDto reqDto) {
+        User subject = userService.getByPhone(subjectPhone);
+
+        if (subject.getRole() != Role.SUBJECT) {
+            throw new BusinessException(ErrorCode.CONNECTION_SUBJECT_ONLY);
+        }
+
+        if (connectionRepository.existsBySubjectAndGuardianPhone(subject, reqDto.getGuardianPhone())) {
+            throw new BusinessException(ErrorCode.CONNECTION_ALREADY_EXISTS);
+        }
+
+        if (connectionRepository.countBySubject(subject) >= 5) {
+            throw new BusinessException(ErrorCode.GUARDIAN_LIMIT_EXCEEDED);
+        }
+
+        User guardian = userService.findByPhone(reqDto.getGuardianPhone()).orElse(null);
+        ConnectionStatus status = guardian != null ? ConnectionStatus.CONNECTED : ConnectionStatus.PENDING;
+
+        Connection connection = Connection.builder()
+                .subject(subject)
+                .guardian(guardian)
+                .guardianPhone(reqDto.getGuardianPhone())
+                .subjectGivenName(reqDto.getName())
+                .status(status)
+                .build();
+        connectionRepository.save(connection);
+
+        return new AddConnectionRespDto(connection);
+    }
+
+    @Transactional
+    public void activatePendingConnections(String guardianPhone, User guardian) {
+        List<Connection> pending = connectionRepository.findByGuardianPhoneAndStatus(guardianPhone, ConnectionStatus.PENDING);
+        pending.forEach(c -> c.connectGuardian(guardian));
+    }
 
     @Transactional(readOnly = true)
     public GetConnectionsRespDto getConnections(String phone) {

@@ -29,6 +29,8 @@ public enum ErrorCode {
     // Connection
     CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결 정보를 찾을 수 없습니다"),
     CONNECTION_FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "수정 권한이 없습니다"),
+    CONNECTION_SUBJECT_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "당사자만 보호자를 추가할 수 있습니다"),
+    CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONNECTION_ALREADY_EXISTS", "이미 등록된 보호자입니다"),
 
     // CheckIn
     ALREADY_CHECKED_IN(HttpStatus.CONFLICT, "ALREADY_CHECKED_IN", "오늘은 이미 안부 확인을 했습니다"),
