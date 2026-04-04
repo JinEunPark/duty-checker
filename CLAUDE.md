@@ -68,9 +68,15 @@ API 명세는 GitHub Issue에서 관리한다.
 4. **커밋**
    - 형식: `#{issue-number} {커밋 내용}`
    - 예: `#6 implement POST /auth/register`
-5. **PR 생성**
+5. **검증**
+   - PR 생성 전 반드시 아래 명령을 실행하여 빌드와 전체 테스트가 통과하는지 확인한다
+     ```
+     ./gradlew clean build
+     ```
+   - 빌드 또는 테스트 실패 시 원인을 수정한 후 다음 단계로 진행한다
+6. **PR 생성**
    - 작업 완료 후 `main` 브랜치 대상으로 PR 생성
    - PR 본문에 `Closes #{issue-number}` 포함
    - PR 생성 후 사용자에게 검토 및 머지 요청
-6. **Merge**
+7. **Merge**
    - 사용자가 직접 PR에서 머지 버튼을 누른다
