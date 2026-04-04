@@ -55,6 +55,10 @@ public class CheckInService {
     public GetLatestCheckInRespDto getLatestCheckIn(String phone) {
         User user = userService.getByPhone(phone);
 
+        if (user.getRole() != Role.SUBJECT) {
+            throw new BusinessException(ErrorCode.CHECK_IN_FORBIDDEN);
+        }
+
         Optional<CheckIn> latest = checkInRepository.findTopBySubjectOrderByCheckedAtDesc(user);
 
         if (latest.isEmpty()) {
