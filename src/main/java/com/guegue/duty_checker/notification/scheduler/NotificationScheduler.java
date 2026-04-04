@@ -1,5 +1,6 @@
-package com.guegue.duty_checker.notification.service;
+package com.guegue.duty_checker.notification.scheduler;
 
+import com.guegue.duty_checker.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
