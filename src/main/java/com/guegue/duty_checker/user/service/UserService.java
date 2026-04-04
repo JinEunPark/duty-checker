@@ -19,4 +19,14 @@ public class UserService {
         return userRepository.findByPhone(phone)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
+
+    @Transactional
+    public void updateFcmToken(String phone, String fcmToken) {
+        getByPhone(phone).updateFcmToken(fcmToken);
+    }
+
+    @Transactional
+    public void clearFcmToken(String phone) {
+        getByPhone(phone).clearFcmToken();
+    }
 }
