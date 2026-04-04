@@ -85,11 +85,7 @@ public class AuthService {
         userRepository.save(user);
         verifiedPhoneRedisRepository.delete(phone);
 
-        String accessToken = jwtProvider.generateAccessToken(phone);
-        String refreshToken = jwtProvider.generateRefreshToken(phone);
-        refreshTokenRedisRepository.save(refreshToken, phone);
-
-        return new RegisterRespDto(accessToken, refreshToken, user);
+        return new RegisterRespDto(user);
     }
 
     public LoginRespDto login(LoginReqDto reqDto) {
