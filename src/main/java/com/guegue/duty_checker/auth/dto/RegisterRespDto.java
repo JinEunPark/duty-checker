@@ -6,13 +6,15 @@ import lombok.Getter;
 
 @Getter
 public class RegisterRespDto {
-    private final Long id;
-    private final String phone;
-    private final Role role;
+    private final String accessToken;
+    private final String refreshToken;
+    private final UserInfo user;
 
-    public RegisterRespDto(User user) {
-        this.id = user.getId();
-        this.phone = user.getPhone();
-        this.role = user.getRole();
+    public RegisterRespDto(String accessToken, String refreshToken, User user) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.user = new UserInfo(user.getId(), user.getPhone(), user.getRole());
     }
+
+    public record UserInfo(Long id, String phone, Role role) {}
 }
