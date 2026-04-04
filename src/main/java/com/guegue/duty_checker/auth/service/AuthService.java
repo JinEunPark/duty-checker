@@ -10,6 +10,7 @@ import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
 import com.guegue.duty_checker.user.domain.User;
 import com.guegue.duty_checker.user.repository.UserRepository;
+import com.guegue.duty_checker.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class AuthService {
     private final SmsProvider smsProvider;
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
     public SendCodeRespDto sendCode(SendCodeReqDto reqDto) {
@@ -109,6 +111,7 @@ public class AuthService {
 
     public void logout(String phone) {
         refreshTokenRedisRepository.deleteByPhone(phone);
+        userService.clearFcmToken(phone);
     }
 
     public RefreshTokenRespDto refresh(RefreshTokenReqDto reqDto) {

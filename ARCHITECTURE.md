@@ -40,7 +40,8 @@ com.guegue.duty_checker
 │   ├── repository/
 │   └── dto/
 ├── notification/
-│   ├── service/          ← NotificationService, 스케줄러
+│   ├── scheduler/        ← NotificationScheduler
+│   ├── service/          ← NotificationService
 │   ├── domain/           ← NotificationLog (Entity)
 │   ├── repository/
 │   ├── dto/

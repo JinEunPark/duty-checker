@@ -31,11 +31,22 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(length = 200)
+    private String fcmToken;
+
     @Builder
     public User(String phone, String password, Role role) {
         this.phone = phone;
         this.password = password;
         this.role = role;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
+    public void clearFcmToken() {
+        this.fcmToken = null;
     }
 }
