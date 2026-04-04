@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -17,16 +16,16 @@ public class JwtProvider {
 
     private final SecretKey secretKey;
     private final long accessExpirationMs;
-    private final long verifiedExpirationMs;
+    private final long refreshExpirationMs;
 
     public JwtProvider(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
-            @Value("${jwt.verified-expiration-ms}") long verifiedExpirationMs
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
     ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpirationMs = accessExpirationMs;
-        this.verifiedExpirationMs = verifiedExpirationMs;
+        this.refreshExpirationMs = refreshExpirationMs;
     }
 
     public String generateAccessToken(String phone) {
@@ -39,8 +38,14 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String generateVerifiedToken() {
-        return UUID.randomUUID().toString().replace("-", "");
+    public String generateRefreshToken(String phone) {
+        return Jwts.builder()
+                .subject(phone)
+                .claim("type", "refresh")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + refreshExpirationMs))
+                .signWith(secretKey)
+                .compact();
     }
 
     public String extractPhone(String token) {
