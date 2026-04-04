@@ -10,7 +10,7 @@ import com.guegue.duty_checker.connection.dto.UpdateConnectionNameRespDto;
 import com.guegue.duty_checker.connection.repository.ConnectionRepository;
 import com.guegue.duty_checker.user.domain.Role;
 import com.guegue.duty_checker.user.domain.User;
-import com.guegue.duty_checker.user.repository.UserRepository;
+import com.guegue.duty_checker.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,11 +22,11 @@ import java.util.List;
 public class ConnectionService {
 
     private final ConnectionRepository connectionRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Transactional(readOnly = true)
     public GetConnectionsRespDto getConnections(String phone) {
-        User user = findUser(phone);
+        User user = userService.getByPhone(phone);
 
         if (user.getRole() == Role.SUBJECT) {
             List<ConnectionItemDto> items = connectionRepository.findBySubject(user).stream()
@@ -43,7 +43,7 @@ public class ConnectionService {
 
     @Transactional
     public UpdateConnectionNameRespDto updateConnectionName(Long connectionId, String phone, UpdateConnectionNameReqDto reqDto) {
-        User user = findUser(phone);
+        User user = userService.getByPhone(phone);
         Connection connection = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CONNECTION_NOT_FOUND));
 
@@ -60,10 +60,5 @@ public class ConnectionService {
             connection.updateGuardianGivenName(reqDto.getName());
             return UpdateConnectionNameRespDto.forGuardian(connection);
         }
-    }
-
-    private User findUser(String phone) {
-        return userRepository.findByPhone(phone)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }
