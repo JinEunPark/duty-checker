@@ -44,6 +44,30 @@ API 명세는 GitHub Issue에서 관리한다.
 
 ---
 
+## Swagger 문서화 규칙
+
+모든 API 구현 시 Swagger 어노테이션을 반드시 작성한다.
+
+**Controller 클래스:**
+- `@Tag(name = "...", description = "...")` — Controller 단위 태그
+
+**각 API 메서드:**
+- `@Operation(summary = "...", description = "...")` — 한 줄 요약 + 상세 설명
+- `@ApiResponses({ @ApiResponse(...), ... })` — 가능한 모든 응답 코드와 설명
+
+**인증이 필요한 API:**
+- Controller 클래스에 `@SecurityRequirement(name = "BearerAuth")` 추가
+
+**Path Variable:**
+- `@Parameter(description = "...")` 추가
+
+**작성 기준:**
+- summary: 동사+목적어 형식으로 간결하게 (예: "체크인 생성", "연결 목록 조회")
+- description: 비즈니스 규칙이나 제약 조건이 있으면 명시 (예: "당일 중복 체크인은 허용되지 않습니다")
+- 에러 응답 코드는 실제 발생 가능한 케이스만 포함
+
+---
+
 ## 작업 흐름
 모든 작업 요청은 아래 순서로 진행한다.
 1. **GitHub Issue 확인 또는 생성**

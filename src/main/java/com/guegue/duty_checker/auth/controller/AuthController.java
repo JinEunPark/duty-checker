@@ -2,6 +2,10 @@ package com.guegue.duty_checker.auth.controller;
 
 import com.guegue.duty_checker.auth.dto.*;
 import com.guegue.duty_checker.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Auth", description = "인증/인가 API")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -16,33 +21,64 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Operation(summary = "인증 코드 발송", description = "입력한 전화번호로 SMS 인증 코드를 발송합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "인증 코드 발송 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 전화번호 형식 등)")
+    })
     @PostMapping("/send-code")
     public ResponseEntity<SendCodeRespDto> sendCode(@Valid @RequestBody SendCodeReqDto reqDto) {
         return ResponseEntity.ok(authService.sendCode(reqDto));
     }
 
+    @Operation(summary = "인증 코드 검증", description = "발송된 SMS 인증 코드의 유효성을 검증합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "인증 코드 검증 성공"),
+            @ApiResponse(responseCode = "400", description = "인증 코드 불일치 또는 만료")
+    })
     @PostMapping("/verify-code")
     public ResponseEntity<Void> verifyCode(@Valid @RequestBody VerifyCodeReqDto reqDto) {
         authService.verifyCode(reqDto);
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "회원가입", description = "인증 완료된 전화번호로 신규 회원을 등록합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "회원가입 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 이미 가입된 전화번호"),
+            @ApiResponse(responseCode = "403", description = "전화번호 인증이 완료되지 않음")
+    })
     @PostMapping("/register")
     public ResponseEntity<RegisterRespDto> register(@Valid @RequestBody RegisterReqDto reqDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(reqDto));
     }
 
+    @Operation(summary = "로그인", description = "전화번호와 비밀번호로 로그인하여 JWT 토큰을 발급받습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그인 성공 (Access Token, Refresh Token 발급)"),
+            @ApiResponse(responseCode = "401", description = "전화번호 또는 비밀번호 불일치")
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginRespDto> login(@Valid @RequestBody LoginReqDto reqDto) {
         return ResponseEntity.ok(authService.login(reqDto));
     }
 
+    @Operation(summary = "로그아웃", description = "현재 사용자의 Refresh Token을 무효화하여 로그아웃 처리합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
+    })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@AuthenticationPrincipal String phone) {
         authService.logout(phone);
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
+            @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 Refresh Token")
+    })
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenRespDto> refresh(@Valid @RequestBody RefreshTokenReqDto reqDto) {
         return ResponseEntity.ok(authService.refresh(reqDto));
