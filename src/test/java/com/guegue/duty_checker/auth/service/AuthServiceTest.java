@@ -30,11 +30,27 @@ class AuthServiceTest {
 
     @InjectMocks AuthService authService;
 
+    @Mock SmsCodeRedisRepository smsCodeRedisRepository;
+    @Mock VerifiedPhoneRedisRepository verifiedPhoneRedisRepository;
     @Mock RefreshTokenRedisRepository refreshTokenRedisRepository;
+    @Mock SmsProvider smsProvider;
     @Mock JwtProvider jwtProvider;
     @Mock UserService userService;
     @Mock ConnectionService connectionService;
     @Mock PasswordEncoder passwordEncoder;
+
+    private SendCodeReqDto sendCodeReq(String phone) {
+        SendCodeReqDto dto = new SendCodeReqDto();
+        ReflectionTestUtils.setField(dto, "phone", phone);
+        return dto;
+    }
+
+    private VerifyCodeReqDto verifyCodeReq(String phone, String code) {
+        VerifyCodeReqDto dto = new VerifyCodeReqDto();
+        ReflectionTestUtils.setField(dto, "phone", phone);
+        ReflectionTestUtils.setField(dto, "verificationCode", code);
+        return dto;
+    }
 
     private RegisterReqDto registerReq(String phone, String password, Role role) {
         RegisterReqDto dto = new RegisterReqDto();
@@ -53,6 +69,74 @@ class AuthServiceTest {
 
     private User user(String phone, Role role) {
         return User.builder().phone(phone).password("encoded").role(role).build();
+    }
+
+    // ─── sendCode ──────────────────────────────────────────────────────────
+
+    @Test
+    void sendCode_쿨다운중_예외발생() {
+        given(smsCodeRedisRepository.isOnCooldown("01011111111")).willReturn(true);
+        given(smsCodeRedisRepository.getRemainingCooldownSeconds("01011111111")).willReturn(30L);
+
+        assertThatThrownBy(() -> authService.sendCode(sendCodeReq("01011111111")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.AUTH_SEND_CODE_COOLDOWN);
+    }
+
+    @Test
+    void sendCode_정상_코드저장및SMS발송() {
+        given(smsCodeRedisRepository.isOnCooldown("01011111111")).willReturn(false);
+
+        SendCodeRespDto resp = authService.sendCode(sendCodeReq("01011111111"));
+
+        verify(smsCodeRedisRepository).saveCode(eq("01011111111"), anyString());
+        verify(smsProvider).send(eq("01011111111"), anyString());
+        assertThat(resp.getExpiredAt()).isNotNull();
+    }
+
+    // ─── verifyCode ────────────────────────────────────────────────────────
+
+    @Test
+    void verifyCode_코드만료_예외발생() {
+        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.verifyCode(verifyCodeReq("01011111111", "123456")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.AUTH_CODE_EXPIRED);
+    }
+
+    @Test
+    void verifyCode_코드불일치_횟수미초과_예외발생() {
+        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.of("111111"));
+        given(smsCodeRedisRepository.incrementAttemptsAndCheckExceeded("01011111111")).willReturn(false);
+
+        assertThatThrownBy(() -> authService.verifyCode(verifyCodeReq("01011111111", "999999")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.AUTH_CODE_MISMATCH);
+    }
+
+    @Test
+    void verifyCode_코드불일치_횟수초과_예외발생() {
+        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.of("111111"));
+        given(smsCodeRedisRepository.incrementAttemptsAndCheckExceeded("01011111111")).willReturn(true);
+
+        assertThatThrownBy(() -> authService.verifyCode(verifyCodeReq("01011111111", "999999")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.AUTH_CODE_ATTEMPTS_EXCEEDED);
+    }
+
+    @Test
+    void verifyCode_코드일치_인증저장() {
+        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.of("123456"));
+
+        authService.verifyCode(verifyCodeReq("01011111111", "123456"));
+
+        verify(smsCodeRedisRepository).deleteCode("01011111111");
+        verify(verifiedPhoneRedisRepository).save("01011111111");
     }
 
     // ─── register ──────────────────────────────────────────────────────────

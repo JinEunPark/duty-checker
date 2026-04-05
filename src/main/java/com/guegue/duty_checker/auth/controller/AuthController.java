@@ -21,6 +21,29 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Operation(summary = "인증 코드 발송", description = "입력한 전화번호로 SMS 인증 코드를 발송합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "인증 코드 발송 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 전화번호 형식 등)"),
+            @ApiResponse(responseCode = "429", description = "재발송 대기 시간 미경과")
+    })
+    @PostMapping("/send-code")
+    public ResponseEntity<SendCodeRespDto> sendCode(@Valid @RequestBody SendCodeReqDto reqDto) {
+        return ResponseEntity.ok(authService.sendCode(reqDto));
+    }
+
+    @Operation(summary = "인증 코드 검증", description = "발송된 SMS 인증 코드의 유효성을 검증합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "인증 코드 검증 성공"),
+            @ApiResponse(responseCode = "400", description = "인증 코드 불일치 또는 만료"),
+            @ApiResponse(responseCode = "429", description = "인증 시도 횟수 초과")
+    })
+    @PostMapping("/verify-code")
+    public ResponseEntity<Void> verifyCode(@Valid @RequestBody VerifyCodeReqDto reqDto) {
+        authService.verifyCode(reqDto);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "회원가입", description = "전화번호로 신규 회원을 등록합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "회원가입 성공"),

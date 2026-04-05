@@ -9,6 +9,10 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Auth
+    AUTH_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "AUTH_CODE_EXPIRED", "인증코드가 만료되었습니다"),
+    AUTH_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "AUTH_CODE_MISMATCH", "인증코드가 일치하지 않습니다"),
+    AUTH_CODE_ATTEMPTS_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "AUTH_CODE_ATTEMPTS_EXCEEDED", "인증 시도 횟수를 초과했습니다. 인증코드를 재발송해주세요"),
+    AUTH_SEND_CODE_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "SEND_CODE_COOLDOWN", "인증코드 재발송은 %d초 후에 가능합니다"),
     AUTH_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다"),
     ALREADY_REGISTERED(HttpStatus.CONFLICT, "ALREADY_REGISTERED", "이미 가입된 전화번호입니다"),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "INVALID_PASSWORD", "비밀번호가 올바르지 않습니다"),
