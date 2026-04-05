@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:duty_checker_test
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: test-secret-key-must-be-at-least-256-bits-long-for-hs256
+  access-expiration-ms: 3600000
+  refresh-expiration-ms: 2592000000
