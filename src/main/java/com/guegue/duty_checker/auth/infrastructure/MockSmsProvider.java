@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@Profile("!prod")
 public class MockSmsProvider implements SmsProvider {
 
     @Override
