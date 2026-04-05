@@ -21,7 +21,7 @@ spring:
 jwt:
   secret: duty-checker-secret-key-must-be-at-least-256-bits-long-for-hs256
   access-expiration-ms: 3600000     # 1시간
-  refresh-expiration-ms: 2592000000 # 30일
+  refresh-expiration-ms: 7776000000 # 90일
 
 server:
   port: 8080

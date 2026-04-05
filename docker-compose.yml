@@ -27,8 +27,6 @@ services:
     container_name: duty-checker-redis
     networks:
       - traefik-net
-    volumes:
-      - redis-data:/data
     restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -71,8 +69,6 @@ services:
 
 volumes:
   mysql-data:
-    driver: local
-  redis-data:
     driver: local
 
 networks:

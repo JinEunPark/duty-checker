@@ -51,29 +51,12 @@ public class AuthService {
     }
 
     public void verifyCode(VerifyCodeReqDto reqDto) {
-        String phone = reqDto.getPhone();
-
-        String storedCode = smsCodeRedisRepository.findCode(phone)
-                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_CODE_EXPIRED));
-
-        if (!storedCode.equals(reqDto.getVerificationCode())) {
-            boolean exceeded = smsCodeRedisRepository.incrementAttemptsAndCheckExceeded(phone);
-            if (exceeded) {
-                throw new BusinessException(ErrorCode.AUTH_CODE_ATTEMPTS_EXCEEDED);
-            }
-            throw new BusinessException(ErrorCode.AUTH_CODE_MISMATCH);
-        }
-
-        smsCodeRedisRepository.deleteCode(phone);
-        verifiedPhoneRedisRepository.save(phone);
+        // SMS 발송 미구현으로 인해 코드 검증 없이 항상 인증 성공 처리
+        verifiedPhoneRedisRepository.save(reqDto.getPhone());
     }
 
     public RegisterRespDto register(RegisterReqDto reqDto) {
         String phone = reqDto.getPhone();
-
-        if (!verifiedPhoneRedisRepository.isVerified(phone)) {
-            throw new BusinessException(ErrorCode.PHONE_NOT_VERIFIED);
-        }
 
         if (userService.existsByPhone(phone)) {
             throw new BusinessException(ErrorCode.ALREADY_REGISTERED);
@@ -85,7 +68,6 @@ public class AuthService {
                 .role(reqDto.getRole())
                 .build();
         userService.save(user);
-        verifiedPhoneRedisRepository.delete(phone);
         connectionService.activatePendingConnections(phone, user);
 
         return new RegisterRespDto(user);

@@ -18,4 +18,4 @@ spring:
 jwt:
   secret: test-secret-key-must-be-at-least-256-bits-long-for-hs256
   access-expiration-ms: 3600000
-  refresh-expiration-ms: 2592000000
+  refresh-expiration-ms: 7776000000

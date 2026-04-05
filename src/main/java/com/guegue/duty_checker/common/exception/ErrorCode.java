@@ -14,7 +14,6 @@ public enum ErrorCode {
     AUTH_CODE_ATTEMPTS_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "AUTH_CODE_ATTEMPTS_EXCEEDED", "인증 시도 횟수를 초과했습니다. 인증코드를 재발송해주세요"),
     AUTH_SEND_CODE_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "SEND_CODE_COOLDOWN", "인증코드 재발송은 %d초 후에 가능합니다"),
     AUTH_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다"),
-    PHONE_NOT_VERIFIED(HttpStatus.UNAUTHORIZED, "PHONE_NOT_VERIFIED", "전화번호 인증이 필요합니다"),
     ALREADY_REGISTERED(HttpStatus.CONFLICT, "ALREADY_REGISTERED", "이미 가입된 전화번호입니다"),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "INVALID_PASSWORD", "비밀번호가 올바르지 않습니다"),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "refreshToken이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요."),

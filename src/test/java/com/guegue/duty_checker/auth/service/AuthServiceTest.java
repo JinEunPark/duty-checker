@@ -98,62 +98,16 @@ class AuthServiceTest {
     // ─── verifyCode ────────────────────────────────────────────────────────
 
     @Test
-    void verifyCode_코드만료_예외발생() {
-        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> authService.verifyCode(verifyCodeReq("01011111111", "123456")))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.AUTH_CODE_EXPIRED);
-    }
-
-    @Test
-    void verifyCode_코드불일치_횟수미초과_예외발생() {
-        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.of("111111"));
-        given(smsCodeRedisRepository.incrementAttemptsAndCheckExceeded("01011111111")).willReturn(false);
-
-        assertThatThrownBy(() -> authService.verifyCode(verifyCodeReq("01011111111", "999999")))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.AUTH_CODE_MISMATCH);
-    }
-
-    @Test
-    void verifyCode_코드불일치_횟수초과_예외발생() {
-        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.of("111111"));
-        given(smsCodeRedisRepository.incrementAttemptsAndCheckExceeded("01011111111")).willReturn(true);
-
-        assertThatThrownBy(() -> authService.verifyCode(verifyCodeReq("01011111111", "999999")))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.AUTH_CODE_ATTEMPTS_EXCEEDED);
-    }
-
-    @Test
-    void verifyCode_코드일치_인증저장() {
-        given(smsCodeRedisRepository.findCode("01011111111")).willReturn(Optional.of("123456"));
-
+    void verifyCode_항상성공_인증저장() {
         authService.verifyCode(verifyCodeReq("01011111111", "123456"));
 
-        verify(smsCodeRedisRepository).deleteCode("01011111111");
         verify(verifiedPhoneRedisRepository).save("01011111111");
     }
 
     // ─── register ──────────────────────────────────────────────────────────
 
     @Test
-    void register_전화번호미인증_예외발생() {
-        given(verifiedPhoneRedisRepository.isVerified("01011111111")).willReturn(false);
-
-        assertThatThrownBy(() -> authService.register(registerReq("01011111111", "pw", Role.SUBJECT)))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.PHONE_NOT_VERIFIED);
-    }
-
-    @Test
     void register_이미가입된번호_예외발생() {
-        given(verifiedPhoneRedisRepository.isVerified("01011111111")).willReturn(true);
         given(userService.existsByPhone("01011111111")).willReturn(true);
 
         assertThatThrownBy(() -> authService.register(registerReq("01011111111", "pw", Role.SUBJECT)))
@@ -164,14 +118,12 @@ class AuthServiceTest {
 
     @Test
     void register_정상_유저저장및PENDING활성화() {
-        given(verifiedPhoneRedisRepository.isVerified("01011111111")).willReturn(true);
         given(userService.existsByPhone("01011111111")).willReturn(false);
         given(passwordEncoder.encode("pw")).willReturn("encoded");
 
         RegisterRespDto resp = authService.register(registerReq("01011111111", "pw", Role.SUBJECT));
 
         verify(userService).save(any(User.class));
-        verify(verifiedPhoneRedisRepository).delete("01011111111");
         verify(connectionService).activatePendingConnections(eq("01011111111"), any(User.class));
         assertThat(resp).isNotNull();
     }
