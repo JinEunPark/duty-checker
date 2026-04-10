@@ -12,4 +12,6 @@ public interface CheckInRepository extends JpaRepository<CheckIn, Long> {
     boolean existsBySubjectAndCheckedAtBetween(User subject, ZonedDateTime start, ZonedDateTime end);
 
     Optional<CheckIn> findTopBySubjectOrderByCheckedAtDesc(User subject);
+
+    void deleteBySubject(User subject);
 }

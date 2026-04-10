@@ -88,6 +88,11 @@ public class ConnectionService {
     }
 
     @Transactional
+    public void deleteAllByUser(User user) {
+        connectionRepository.deleteBySubjectOrGuardian(user, user);
+    }
+
+    @Transactional
     public UpdateConnectionNameRespDto updateConnectionName(Long connectionId, String phone, UpdateConnectionNameReqDto reqDto) {
         User user = userService.getByPhone(phone);
         Connection connection = connectionRepository.findById(connectionId)

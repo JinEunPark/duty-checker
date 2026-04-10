@@ -5,6 +5,7 @@ import com.guegue.duty_checker.auth.infrastructure.RefreshTokenRedisRepository;
 import com.guegue.duty_checker.auth.infrastructure.SmsCodeRedisRepository;
 import com.guegue.duty_checker.auth.infrastructure.SmsProvider;
 import com.guegue.duty_checker.auth.infrastructure.VerifiedPhoneRedisRepository;
+import com.guegue.duty_checker.checkin.service.CheckInService;
 import com.guegue.duty_checker.common.config.JwtProvider;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
@@ -14,6 +15,7 @@ import com.guegue.duty_checker.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -32,6 +34,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final UserService userService;
     private final ConnectionService connectionService;
+    private final CheckInService checkInService;
     private final PasswordEncoder passwordEncoder;
 
     public SendCodeRespDto sendCode(SendCodeReqDto reqDto) {
@@ -113,6 +116,15 @@ public class AuthService {
 
     public CheckPhoneRespDto checkPhone(String phone) {
         return new CheckPhoneRespDto(userService.existsByPhone(phone));
+    }
+
+    @Transactional
+    public void withdraw(String phone) {
+        User user = userService.getByPhone(phone);
+        refreshTokenRedisRepository.deleteByPhone(phone);
+        connectionService.deleteAllByUser(user);
+        checkInService.deleteAllByUser(user);
+        userService.deleteUser(phone);
     }
 
     private String generateCode() {

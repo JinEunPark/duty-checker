@@ -5,6 +5,7 @@ import com.guegue.duty_checker.auth.infrastructure.*;
 import com.guegue.duty_checker.common.config.JwtProvider;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
+import com.guegue.duty_checker.checkin.service.CheckInService;
 import com.guegue.duty_checker.connection.service.ConnectionService;
 import com.guegue.duty_checker.user.domain.Role;
 import com.guegue.duty_checker.user.domain.User;
@@ -37,6 +38,7 @@ class AuthServiceTest {
     @Mock JwtProvider jwtProvider;
     @Mock UserService userService;
     @Mock ConnectionService connectionService;
+    @Mock CheckInService checkInService;
     @Mock PasswordEncoder passwordEncoder;
 
     private SendCodeReqDto sendCodeReq(String phone) {
@@ -204,5 +206,31 @@ class AuthServiceTest {
         verify(refreshTokenRedisRepository).deleteByToken("old-refresh");
         assertThat(resp.getAccessToken()).isEqualTo("new-access");
         assertThat(resp.getRefreshToken()).isEqualTo("new-refresh");
+    }
+
+    // ─── withdraw ──────────────────────────────────────────────────────────
+
+    @Test
+    void withdraw_정상_리프레시토큰삭제및연관데이터정리및유저삭제() {
+        User u = user("01011111111", Role.SUBJECT);
+        given(userService.getByPhone("01011111111")).willReturn(u);
+
+        authService.withdraw("01011111111");
+
+        verify(refreshTokenRedisRepository).deleteByPhone("01011111111");
+        verify(connectionService).deleteAllByUser(u);
+        verify(checkInService).deleteAllByUser(u);
+        verify(userService).deleteUser("01011111111");
+    }
+
+    @Test
+    void withdraw_존재하지않는사용자_예외발생() {
+        given(userService.getByPhone("01099999999"))
+                .willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        assertThatThrownBy(() -> authService.withdraw("01099999999"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
     }
 }
