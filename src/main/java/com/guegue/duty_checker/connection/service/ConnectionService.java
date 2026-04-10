@@ -75,7 +75,7 @@ public class ConnectionService {
             List<ConnectionItemDto> items = connectionRepository.findBySubject(user).stream()
                     .map(ConnectionItemDto::forSubject)
                     .toList();
-            return new GetConnectionsRespDto(Role.SUBJECT, items);
+            return new GetConnectionsRespDto(Role.GUARDIAN, items);
         } else {
             List<ConnectionItemDto> items = connectionRepository.findByGuardian(user).stream()
                     .map(connection -> {
@@ -83,7 +83,7 @@ public class ConnectionService {
                         return ConnectionItemDto.forGuardian(connection, checkIn.getLatestCheckedAt(), checkIn.isTodayChecked());
                     })
                     .toList();
-            return new GetConnectionsRespDto(Role.GUARDIAN, items);
+            return new GetConnectionsRespDto(Role.SUBJECT, items);
         }
     }
 
