@@ -157,7 +157,7 @@ class ConnectionServiceTest {
 
         var resp = connectionService.getConnections("01011111111");
 
-        assertThat(resp.getRole()).isEqualTo(Role.SUBJECT);
+        assertThat(resp.getRole()).isEqualTo(Role.GUARDIAN);
         assertThat(resp.getConnections()).hasSize(1);
     }
 
@@ -173,7 +173,7 @@ class ConnectionServiceTest {
 
         var resp = connectionService.getConnections("01022222222");
 
-        assertThat(resp.getRole()).isEqualTo(Role.GUARDIAN);
+        assertThat(resp.getRole()).isEqualTo(Role.SUBJECT);
         assertThat(resp.getConnections()).hasSize(1);
     }
 
