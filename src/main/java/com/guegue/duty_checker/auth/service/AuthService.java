@@ -111,6 +111,10 @@ public class AuthService {
         return new RefreshTokenRespDto(newAccessToken, newRefreshToken);
     }
 
+    public CheckPhoneRespDto checkPhone(String phone) {
+        return new CheckPhoneRespDto(userService.existsByPhone(phone));
+    }
+
     private String generateCode() {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }

@@ -71,6 +71,26 @@ class AuthServiceTest {
         return User.builder().phone(phone).password("encoded").role(role).build();
     }
 
+    // ─── checkPhone ────────────────────────────────────────────────────────
+
+    @Test
+    void checkPhone_가입된번호_exists참() {
+        given(userService.existsByPhone("01011111111")).willReturn(true);
+
+        CheckPhoneRespDto resp = authService.checkPhone("01011111111");
+
+        assertThat(resp.isExists()).isTrue();
+    }
+
+    @Test
+    void checkPhone_미가입번호_exists거짓() {
+        given(userService.existsByPhone("01099999999")).willReturn(false);
+
+        CheckPhoneRespDto resp = authService.checkPhone("01099999999");
+
+        assertThat(resp.isExists()).isFalse();
+    }
+
     // ─── sendCode ──────────────────────────────────────────────────────────
 
     @Test
