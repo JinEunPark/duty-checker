@@ -34,6 +34,9 @@ public class User {
     @Column(length = 200)
     private String fcmToken;
 
+    @Column
+    private LocalDateTime deletedAt;
+
     @Builder
     public User(String phone, String password, Role role) {
         this.phone = phone;
@@ -47,6 +50,12 @@ public class User {
     }
 
     public void clearFcmToken() {
+        this.fcmToken = null;
+    }
+
+    public void withdraw() {
+        this.deletedAt = LocalDateTime.now();
+        this.phone = "deleted_" + System.currentTimeMillis() + "_" + this.phone;
         this.fcmToken = null;
     }
 }

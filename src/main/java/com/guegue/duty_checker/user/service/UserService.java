@@ -16,18 +16,18 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User getByPhone(String phone) {
-        return userRepository.findByPhone(phone)
+        return userRepository.findByPhoneAndDeletedAtIsNull(phone)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Transactional(readOnly = true)
     public boolean existsByPhone(String phone) {
-        return userRepository.existsByPhone(phone);
+        return userRepository.existsByPhoneAndDeletedAtIsNull(phone);
     }
 
     @Transactional(readOnly = true)
     public java.util.Optional<User> findByPhone(String phone) {
-        return userRepository.findByPhone(phone);
+        return userRepository.findByPhoneAndDeletedAtIsNull(phone);
     }
 
     @Transactional
@@ -43,5 +43,10 @@ public class UserService {
     @Transactional
     public void clearFcmToken(String phone) {
         getByPhone(phone).clearFcmToken();
+    }
+
+    @Transactional
+    public void deleteUser(String phone) {
+        getByPhone(phone).withdraw();
     }
 }

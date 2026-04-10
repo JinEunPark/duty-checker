@@ -72,6 +72,11 @@ public class CheckInService {
         return new GetLatestCheckInRespDto(checkedAt, isTodayChecked);
     }
 
+    @Transactional
+    public void deleteAllByUser(User user) {
+        checkInRepository.deleteBySubject(user);
+    }
+
     @Transactional(readOnly = true)
     public GetLatestCheckInRespDto getLatestCheckInBySubject(User subject) {
         Optional<CheckIn> latest = checkInRepository.findTopBySubjectOrderByCheckedAtDesc(subject);
