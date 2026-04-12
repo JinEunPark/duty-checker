@@ -43,6 +43,8 @@ public class Connection {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    private LocalDateTime deletedAt;
+
     @Builder
     public Connection(User subject, User guardian, String guardianPhone,
                       String subjectGivenName, String guardianGivenName,
@@ -54,6 +56,10 @@ public class Connection {
         this.guardianGivenName = guardianGivenName;
         this.status = status;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
     }
 
     public void updateSubjectGivenName(String name) {

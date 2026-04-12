@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -38,11 +39,11 @@ public class ConnectionService {
             throw new BusinessException(ErrorCode.CONNECTION_SUBJECT_ONLY);
         }
 
-        if (connectionRepository.existsBySubjectAndGuardianPhone(subject, reqDto.getGuardianPhone())) {
+        if (connectionRepository.existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(subject, reqDto.getGuardianPhone())) {
             throw new BusinessException(ErrorCode.CONNECTION_ALREADY_EXISTS);
         }
 
-        if (connectionRepository.countBySubject(subject) >= 5) {
+        if (connectionRepository.countBySubjectAndDeletedAtIsNull(subject) >= 5) {
             throw new BusinessException(ErrorCode.GUARDIAN_LIMIT_EXCEEDED);
         }
 
@@ -63,7 +64,7 @@ public class ConnectionService {
 
     @Transactional
     public void activatePendingConnections(String guardianPhone, User guardian) {
-        List<Connection> pending = connectionRepository.findByGuardianPhoneAndStatus(guardianPhone, ConnectionStatus.PENDING);
+        List<Connection> pending = connectionRepository.findByGuardianPhoneAndStatusAndDeletedAtIsNull(guardianPhone, ConnectionStatus.PENDING);
         pending.forEach(c -> c.connectGuardian(guardian));
     }
 
@@ -72,18 +73,44 @@ public class ConnectionService {
         User user = userService.getByPhone(phone);
 
         if (user.getRole() == Role.SUBJECT) {
-            List<ConnectionItemDto> items = connectionRepository.findBySubject(user).stream()
+            List<ConnectionItemDto> items = connectionRepository.findBySubjectAndDeletedAtIsNull(user).stream()
                     .map(ConnectionItemDto::forSubject)
                     .toList();
             return new GetConnectionsRespDto(Role.GUARDIAN, items);
         } else {
-            List<ConnectionItemDto> items = connectionRepository.findByGuardian(user).stream()
+            List<ConnectionItemDto> items = connectionRepository.findByGuardianAndDeletedAtIsNull(user).stream()
                     .map(connection -> {
                         GetLatestCheckInRespDto checkIn = checkInService.getLatestCheckInBySubject(connection.getSubject());
                         return ConnectionItemDto.forGuardian(connection, checkIn.getLatestCheckedAt(), checkIn.isTodayChecked());
                     })
                     .toList();
             return new GetConnectionsRespDto(Role.SUBJECT, items);
+        }
+    }
+
+    @Transactional
+    public void deleteConnection(Long connectionId, String phone) {
+        User user = userService.getByPhone(phone);
+        Connection connection = findActiveConnectionById(connectionId);
+        validateDeletable(connection, user);
+        connection.softDelete();
+    }
+
+    private Connection findActiveConnectionById(Long connectionId) {
+        Connection connection = connectionRepository.findById(connectionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CONNECTION_NOT_FOUND));
+        if (connection.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.CONNECTION_NOT_FOUND);
+        }
+        return connection;
+    }
+
+    private void validateDeletable(Connection connection, User user) {
+        boolean isSubject = Objects.equals(connection.getSubject().getId(), user.getId());
+        boolean isGuardian = connection.getGuardian() != null
+                && Objects.equals(connection.getGuardian().getId(), user.getId());
+        if (!isSubject && !isGuardian) {
+            throw new BusinessException(ErrorCode.CONNECTION_DELETE_FORBIDDEN);
         }
     }
 
