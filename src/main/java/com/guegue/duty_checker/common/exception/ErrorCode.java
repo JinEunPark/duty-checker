@@ -26,11 +26,15 @@ public enum ErrorCode {
     GUARDIAN_NOT_FOUND(HttpStatus.NOT_FOUND, "GUARDIAN_NOT_FOUND", "보호자를 찾을 수 없습니다"),
 
     // Connection
-    CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결 정보를 찾을 수 없습니다"),
+    CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "존재하지 않는 연결입니다"),
     CONNECTION_FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "수정 권한이 없습니다"),
     CONNECTION_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "삭제 권한이 없습니다"),
     CONNECTION_SUBJECT_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "당사자만 보호자를 추가할 수 있습니다"),
-    CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONNECTION_ALREADY_EXISTS", "이미 등록된 보호자입니다"),
+    CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONNECTION_ALREADY_EXISTS", "이미 연결 요청이 존재합니다"),
+    INVALID_CONNECTION_ROLES(HttpStatus.BAD_REQUEST, "INVALID_CONNECTION_ROLES", "당사자와 보호자 간에만 연결이 가능합니다"),
+    CONNECTION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CONNECTION_ALREADY_PROCESSED", "이미 처리된 연결 요청입니다"),
+    INVALID_STATUS(HttpStatus.BAD_REQUEST, "INVALID_STATUS", "status는 CONNECTED 또는 REJECTED만 허용됩니다"),
+    CONNECTION_RESPONDER_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "신청을 받은 상대방만 수락/거절할 수 있습니다"),
 
     // CheckIn
     ALREADY_CHECKED_IN(HttpStatus.CONFLICT, "ALREADY_CHECKED_IN", "오늘은 이미 안부 확인을 했습니다"),

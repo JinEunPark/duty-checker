@@ -139,14 +139,13 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_정상_유저저장및PENDING활성화() {
+    void register_정상_유저저장() {
         given(userService.existsByPhone("01011111111")).willReturn(false);
         given(passwordEncoder.encode("pw")).willReturn("encoded");
 
         RegisterRespDto resp = authService.register(registerReq("01011111111", "pw", Role.SUBJECT));
 
         verify(userService).save(any(User.class));
-        verify(connectionService).activatePendingConnections(eq("01011111111"), any(User.class));
         assertThat(resp).isNotNull();
     }
 

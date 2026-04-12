@@ -1,13 +1,14 @@
 package com.guegue.duty_checker.connection.service;
 
-import com.guegue.duty_checker.checkin.service.CheckInService;
 import com.guegue.duty_checker.checkin.dto.GetLatestCheckInRespDto;
+import com.guegue.duty_checker.checkin.service.CheckInService;
 import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
 import com.guegue.duty_checker.connection.domain.Connection;
 import com.guegue.duty_checker.connection.domain.ConnectionStatus;
 import com.guegue.duty_checker.connection.dto.AddConnectionReqDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionNameReqDto;
+import com.guegue.duty_checker.connection.dto.UpdateConnectionStatusReqDto;
 import com.guegue.duty_checker.connection.repository.ConnectionRepository;
 import com.guegue.duty_checker.user.domain.Role;
 import com.guegue.duty_checker.user.domain.User;
@@ -38,13 +39,26 @@ class ConnectionServiceTest {
     @Mock CheckInService checkInService;
 
     private User user(String phone, Role role) {
-        return User.builder().phone(phone).password("pw").role(role).build();
+        User u = User.builder().phone(phone).password("pw").role(role).build();
+        return u;
     }
 
-    private AddConnectionReqDto addReq(String guardianPhone, String name) {
+    private User userWithId(String phone, Role role, long id) {
+        User u = User.builder().phone(phone).password("pw").role(role).build();
+        ReflectionTestUtils.setField(u, "id", id);
+        return u;
+    }
+
+    private AddConnectionReqDto addReq(String targetPhone, String name) {
         AddConnectionReqDto dto = new AddConnectionReqDto();
-        ReflectionTestUtils.setField(dto, "guardianPhone", guardianPhone);
+        ReflectionTestUtils.setField(dto, "targetPhone", targetPhone);
         ReflectionTestUtils.setField(dto, "name", name);
+        return dto;
+    }
+
+    private UpdateConnectionStatusReqDto statusReq(String status) {
+        UpdateConnectionStatusReqDto dto = new UpdateConnectionStatusReqDto();
+        ReflectionTestUtils.setField(dto, "status", status);
         return dto;
     }
 
@@ -54,33 +68,83 @@ class ConnectionServiceTest {
         return dto;
     }
 
-    private Connection connection(User subject, User guardian, String guardianPhone, ConnectionStatus status) {
+    private Connection connection(User subject, User guardian, User requester, ConnectionStatus status) {
         return Connection.builder()
                 .subject(subject)
                 .guardian(guardian)
-                .guardianPhone(guardianPhone)
+                .guardianPhone(guardian != null ? guardian.getPhone() : "01099999999")
+                .requester(requester)
                 .status(status)
                 .build();
     }
 
-    // ─── addConnection ─────────────────────────────────────────────────────
+    // ─── addConnection ─────────────────────────────────────────────────────────
 
     @Test
-    void addConnection_보호자역할_예외발생() {
-        User guardian = user("01011111111", Role.GUARDIAN);
-        given(userService.getByPhone("01011111111")).willReturn(guardian);
+    void addConnection_당사자신청_PENDING생성() {
+        User subject = user("01011111111", Role.SUBJECT);
+        User guardian = user("01022222222", Role.GUARDIAN);
+        given(userService.getByPhone("01011111111")).willReturn(subject);
+        given(userService.findByPhone("01022222222")).willReturn(Optional.of(guardian));
+        given(connectionRepository.existsBySubjectAndGuardianAndStatusInAndDeletedAtIsNull(
+                any(), any(), any())).willReturn(false);
 
-        assertThatThrownBy(() -> connectionService.addConnection("01011111111", addReq("01022222222", "엄마")))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.CONNECTION_SUBJECT_ONLY);
+        var resp = connectionService.addConnection("01011111111", addReq("01022222222", "엄마"));
+
+        verify(connectionRepository).save(any(Connection.class));
+        assertThat(resp.getStatus()).isEqualTo(ConnectionStatus.PENDING);
+        assertThat(resp.getPhone()).isEqualTo("01022222222");
     }
 
     @Test
-    void addConnection_중복등록_예외발생() {
+    void addConnection_보호자신청_PENDING생성() {
+        User subject = user("01011111111", Role.SUBJECT);
+        User guardian = user("01022222222", Role.GUARDIAN);
+        given(userService.getByPhone("01022222222")).willReturn(guardian);
+        given(userService.findByPhone("01011111111")).willReturn(Optional.of(subject));
+        given(connectionRepository.existsBySubjectAndGuardianAndStatusInAndDeletedAtIsNull(
+                any(), any(), any())).willReturn(false);
+
+        var resp = connectionService.addConnection("01022222222", addReq("01011111111", "홍길동"));
+
+        verify(connectionRepository).save(any(Connection.class));
+        assertThat(resp.getStatus()).isEqualTo(ConnectionStatus.PENDING);
+        assertThat(resp.getPhone()).isEqualTo("01011111111");
+    }
+
+    @Test
+    void addConnection_대상미가입_예외발생() {
         User subject = user("01011111111", Role.SUBJECT);
         given(userService.getByPhone("01011111111")).willReturn(subject);
-        given(connectionRepository.existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(subject, "01022222222")).willReturn(true);
+        given(userService.findByPhone("01099999999")).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> connectionService.addConnection("01011111111", addReq("01099999999", "엄마")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void addConnection_동일역할신청_예외발생() {
+        User subject1 = user("01011111111", Role.SUBJECT);
+        User subject2 = user("01022222222", Role.SUBJECT);
+        given(userService.getByPhone("01011111111")).willReturn(subject1);
+        given(userService.findByPhone("01022222222")).willReturn(Optional.of(subject2));
+
+        assertThatThrownBy(() -> connectionService.addConnection("01011111111", addReq("01022222222", "친구")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_CONNECTION_ROLES);
+    }
+
+    @Test
+    void addConnection_중복신청_예외발생() {
+        User subject = user("01011111111", Role.SUBJECT);
+        User guardian = user("01022222222", Role.GUARDIAN);
+        given(userService.getByPhone("01011111111")).willReturn(subject);
+        given(userService.findByPhone("01022222222")).willReturn(Optional.of(guardian));
+        given(connectionRepository.existsBySubjectAndGuardianAndStatusInAndDeletedAtIsNull(
+                any(), any(), any())).willReturn(true);
 
         assertThatThrownBy(() -> connectionService.addConnection("01011111111", addReq("01022222222", "엄마")))
                 .isInstanceOf(BusinessException.class)
@@ -88,70 +152,89 @@ class ConnectionServiceTest {
                 .isEqualTo(ErrorCode.CONNECTION_ALREADY_EXISTS);
     }
 
-    @Test
-    void addConnection_5명초과_예외발생() {
-        User subject = user("01011111111", Role.SUBJECT);
-        given(userService.getByPhone("01011111111")).willReturn(subject);
-        given(connectionRepository.existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(subject, "01022222222")).willReturn(false);
-        given(connectionRepository.countBySubjectAndDeletedAtIsNull(subject)).willReturn(5L);
-
-        assertThatThrownBy(() -> connectionService.addConnection("01011111111", addReq("01022222222", "엄마")))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.GUARDIAN_LIMIT_EXCEEDED);
-    }
+    // ─── updateConnectionStatus ────────────────────────────────────────────────
 
     @Test
-    void addConnection_보호자미가입_PENDING생성() {
-        User subject = user("01011111111", Role.SUBJECT);
-        given(userService.getByPhone("01011111111")).willReturn(subject);
-        given(connectionRepository.existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(subject, "01022222222")).willReturn(false);
-        given(connectionRepository.countBySubjectAndDeletedAtIsNull(subject)).willReturn(0L);
-        given(userService.findByPhone("01022222222")).willReturn(Optional.empty());
+    void updateConnectionStatus_수락_CONNECTED전환() {
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.PENDING);
+        ReflectionTestUtils.setField(conn, "id", 10L);
+        given(connectionRepository.findById(10L)).willReturn(Optional.of(conn));
+        given(userService.getByPhone("01022222222")).willReturn(guardian);
 
-        var resp = connectionService.addConnection("01011111111", addReq("01022222222", "엄마"));
-
-        verify(connectionRepository).save(any(Connection.class));
-        assertThat(resp.getStatus()).isEqualTo(ConnectionStatus.PENDING);
-    }
-
-    @Test
-    void addConnection_보호자가입됨_CONNECTED생성() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
-        given(userService.getByPhone("01011111111")).willReturn(subject);
-        given(connectionRepository.existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(subject, "01022222222")).willReturn(false);
-        given(connectionRepository.countBySubjectAndDeletedAtIsNull(subject)).willReturn(0L);
-        given(userService.findByPhone("01022222222")).willReturn(Optional.of(guardian));
-
-        var resp = connectionService.addConnection("01011111111", addReq("01022222222", "엄마"));
+        var resp = connectionService.updateConnectionStatus(10L, "01022222222", statusReq("CONNECTED"));
 
         assertThat(resp.getStatus()).isEqualTo(ConnectionStatus.CONNECTED);
+        assertThat(resp.getId()).isEqualTo(10L);
     }
-
-    // ─── activatePendingConnections ────────────────────────────────────────
 
     @Test
-    void activatePendingConnections_PENDING연결_CONNECTED전환() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
-        Connection pending = connection(subject, null, "01022222222", ConnectionStatus.PENDING);
-        given(connectionRepository.findByGuardianPhoneAndStatusAndDeletedAtIsNull("01022222222", ConnectionStatus.PENDING))
-                .willReturn(List.of(pending));
+    void updateConnectionStatus_거절_REJECTED전환() {
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.PENDING);
+        ReflectionTestUtils.setField(conn, "id", 10L);
+        given(connectionRepository.findById(10L)).willReturn(Optional.of(conn));
+        given(userService.getByPhone("01022222222")).willReturn(guardian);
 
-        connectionService.activatePendingConnections("01022222222", guardian);
+        var resp = connectionService.updateConnectionStatus(10L, "01022222222", statusReq("REJECTED"));
 
-        assertThat(pending.getGuardian()).isEqualTo(guardian);
-        assertThat(pending.getStatus()).isEqualTo(ConnectionStatus.CONNECTED);
+        assertThat(resp.getStatus()).isEqualTo(ConnectionStatus.REJECTED);
     }
 
-    // ─── getConnections ────────────────────────────────────────────────────
+    @Test
+    void updateConnectionStatus_신청자본인호출_예외발생() {
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.PENDING);
+        ReflectionTestUtils.setField(conn, "id", 10L);
+        given(connectionRepository.findById(10L)).willReturn(Optional.of(conn));
+        given(userService.getByPhone("01011111111")).willReturn(subject);
+
+        assertThatThrownBy(() -> connectionService.updateConnectionStatus(10L, "01011111111", statusReq("CONNECTED")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CONNECTION_RESPONDER_ONLY);
+    }
+
+    @Test
+    void updateConnectionStatus_PENDING아닌상태_예외발생() {
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
+        ReflectionTestUtils.setField(conn, "id", 10L);
+        given(connectionRepository.findById(10L)).willReturn(Optional.of(conn));
+        given(userService.getByPhone("01022222222")).willReturn(guardian);
+
+        assertThatThrownBy(() -> connectionService.updateConnectionStatus(10L, "01022222222", statusReq("CONNECTED")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CONNECTION_ALREADY_PROCESSED);
+    }
+
+    @Test
+    void updateConnectionStatus_유효하지않은status_예외발생() {
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.PENDING);
+        ReflectionTestUtils.setField(conn, "id", 10L);
+        given(connectionRepository.findById(10L)).willReturn(Optional.of(conn));
+        given(userService.getByPhone("01022222222")).willReturn(guardian);
+
+        assertThatThrownBy(() -> connectionService.updateConnectionStatus(10L, "01022222222", statusReq("PENDING")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_STATUS);
+    }
+
+    // ─── getConnections ────────────────────────────────────────────────────────
 
     @Test
     void getConnections_당사자_본인연결목록반환() {
         User subject = user("01011111111", Role.SUBJECT);
         User guardian = user("01022222222", Role.GUARDIAN);
-        Connection conn = connection(subject, guardian, "01022222222", ConnectionStatus.CONNECTED);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01011111111")).willReturn(subject);
         given(connectionRepository.findBySubjectAndDeletedAtIsNull(subject)).willReturn(List.of(conn));
 
@@ -165,7 +248,7 @@ class ConnectionServiceTest {
     void getConnections_보호자_담당연결목록반환() {
         User subject = user("01011111111", Role.SUBJECT);
         User guardian = user("01022222222", Role.GUARDIAN);
-        Connection conn = connection(subject, guardian, "01022222222", ConnectionStatus.CONNECTED);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01022222222")).willReturn(guardian);
         given(connectionRepository.findByGuardianAndDeletedAtIsNull(guardian)).willReturn(List.of(conn));
         given(checkInService.getLatestCheckInBySubject(subject))
@@ -177,14 +260,13 @@ class ConnectionServiceTest {
         assertThat(resp.getConnections()).hasSize(1);
     }
 
-    // ─── deleteConnection ─────────────────────────────────────────────────
+    // ─── deleteConnection ─────────────────────────────────────────────────────
 
     @Test
     void deleteConnection_당사자_본인연결_소프트삭제() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
-        ReflectionTestUtils.setField(subject, "id", 1L);
-        Connection conn = connection(subject, guardian, "01022222222", ConnectionStatus.CONNECTED);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01011111111")).willReturn(subject);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 
@@ -195,10 +277,9 @@ class ConnectionServiceTest {
 
     @Test
     void deleteConnection_보호자_본인연결_소프트삭제() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
-        ReflectionTestUtils.setField(guardian, "id", 2L);
-        Connection conn = connection(subject, guardian, "01022222222", ConnectionStatus.CONNECTED);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01022222222")).willReturn(guardian);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 
@@ -221,9 +302,9 @@ class ConnectionServiceTest {
 
     @Test
     void deleteConnection_이미삭제된연결_예외발생() {
-        User subject = user("01011111111", Role.SUBJECT);
-        ReflectionTestUtils.setField(subject, "id", 1L);
-        Connection conn = connection(subject, null, "01022222222", ConnectionStatus.PENDING);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.PENDING);
         conn.softDelete();
         given(userService.getByPhone("01011111111")).willReturn(subject);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
@@ -236,13 +317,10 @@ class ConnectionServiceTest {
 
     @Test
     void deleteConnection_관계없는사용자_예외발생() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
-        User other = user("01099999999", Role.SUBJECT);
-        ReflectionTestUtils.setField(subject, "id", 1L);
-        ReflectionTestUtils.setField(guardian, "id", 2L);
-        ReflectionTestUtils.setField(other, "id", 3L);
-        Connection conn = connection(subject, guardian, "01022222222", ConnectionStatus.CONNECTED);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        User other = userWithId("01099999999", Role.SUBJECT, 3L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01099999999")).willReturn(other);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 
@@ -252,14 +330,14 @@ class ConnectionServiceTest {
                 .isEqualTo(ErrorCode.CONNECTION_DELETE_FORBIDDEN);
     }
 
-    // ─── updateConnectionName ──────────────────────────────────────────────
+    // ─── updateConnectionName ──────────────────────────────────────────────────
 
     @Test
     void updateConnectionName_당사자_본인연결_이름수정() {
-        User subject = user("01011111111", Role.SUBJECT);
-        Connection conn = connection(subject, null, "01022222222", ConnectionStatus.PENDING);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.PENDING);
         ReflectionTestUtils.setField(conn, "id", 1L);
-        ReflectionTestUtils.setField(subject, "id", 1L);
         given(userService.getByPhone("01011111111")).willReturn(subject);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 
@@ -270,11 +348,10 @@ class ConnectionServiceTest {
 
     @Test
     void updateConnectionName_당사자_다른연결_예외발생() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User other = user("01099999999", Role.SUBJECT);
-        ReflectionTestUtils.setField(subject, "id", 1L);
-        ReflectionTestUtils.setField(other, "id", 2L);
-        Connection conn = connection(other, null, "01022222222", ConnectionStatus.PENDING);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User other = userWithId("01099999999", Role.SUBJECT, 2L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 3L);
+        Connection conn = connection(other, guardian, other, ConnectionStatus.PENDING);
         given(userService.getByPhone("01011111111")).willReturn(subject);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 
@@ -286,10 +363,9 @@ class ConnectionServiceTest {
 
     @Test
     void updateConnectionName_보호자_본인연결_이름수정() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
-        ReflectionTestUtils.setField(guardian, "id", 2L);
-        Connection conn = connection(subject, guardian, "01022222222", ConnectionStatus.CONNECTED);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01022222222")).willReturn(guardian);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 
@@ -300,11 +376,10 @@ class ConnectionServiceTest {
 
     @Test
     void updateConnectionName_보호자_다른연결_예외발생() {
-        User guardian = user("01022222222", Role.GUARDIAN);
-        User otherGuardian = user("01033333333", Role.GUARDIAN);
-        ReflectionTestUtils.setField(guardian, "id", 2L);
-        ReflectionTestUtils.setField(otherGuardian, "id", 3L);
-        Connection conn = connection(user("01011111111", Role.SUBJECT), otherGuardian, "01033333333", ConnectionStatus.CONNECTED);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        User otherGuardian = userWithId("01033333333", Role.GUARDIAN, 3L);
+        Connection conn = connection(subject, otherGuardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01022222222")).willReturn(guardian);
         given(connectionRepository.findById(1L)).willReturn(Optional.of(conn));
 

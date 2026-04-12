@@ -1,6 +1,7 @@
 package com.guegue.duty_checker.connection.repository;
 
 import com.guegue.duty_checker.connection.domain.Connection;
+import com.guegue.duty_checker.connection.domain.ConnectionStatus;
 import com.guegue.duty_checker.user.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,13 +13,10 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
 
     List<Connection> findByGuardianAndDeletedAtIsNull(User guardian);
 
-    List<Connection> findByStatus(com.guegue.duty_checker.connection.domain.ConnectionStatus status);
+    List<Connection> findByStatus(ConnectionStatus status);
 
-    boolean existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(User subject, String guardianPhone);
-
-    long countBySubjectAndDeletedAtIsNull(User subject);
-
-    List<Connection> findByGuardianPhoneAndStatusAndDeletedAtIsNull(String guardianPhone, com.guegue.duty_checker.connection.domain.ConnectionStatus status);
+    boolean existsBySubjectAndGuardianAndStatusInAndDeletedAtIsNull(
+            User subject, User guardian, List<ConnectionStatus> statuses);
 
     void deleteBySubjectOrGuardian(User subject, User guardian);
 }

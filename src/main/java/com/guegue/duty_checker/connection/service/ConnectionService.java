@@ -12,6 +12,8 @@ import com.guegue.duty_checker.connection.dto.ConnectionItemDto;
 import com.guegue.duty_checker.connection.dto.GetConnectionsRespDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionNameReqDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionNameRespDto;
+import com.guegue.duty_checker.connection.dto.UpdateConnectionStatusReqDto;
+import com.guegue.duty_checker.connection.dto.UpdateConnectionStatusRespDto;
 import com.guegue.duty_checker.connection.repository.ConnectionRepository;
 import com.guegue.duty_checker.user.domain.Role;
 import com.guegue.duty_checker.user.domain.User;
@@ -32,40 +34,49 @@ public class ConnectionService {
     private final CheckInService checkInService;
 
     @Transactional
-    public AddConnectionRespDto addConnection(String subjectPhone, AddConnectionReqDto reqDto) {
-        User subject = userService.getByPhone(subjectPhone);
+    public AddConnectionRespDto addConnection(String requesterPhone, AddConnectionReqDto reqDto) {
+        User requester = userService.getByPhone(requesterPhone);
+        User target = userService.findByPhone(reqDto.getTargetPhone())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (subject.getRole() != Role.SUBJECT) {
-            throw new BusinessException(ErrorCode.CONNECTION_SUBJECT_ONLY);
-        }
+        validateRoles(requester, target);
 
-        if (connectionRepository.existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(subject, reqDto.getGuardianPhone())) {
+        User subject = requester.getRole() == Role.SUBJECT ? requester : target;
+        User guardian = requester.getRole() == Role.GUARDIAN ? requester : target;
+
+        if (connectionRepository.existsBySubjectAndGuardianAndStatusInAndDeletedAtIsNull(
+                subject, guardian, List.of(ConnectionStatus.PENDING, ConnectionStatus.CONNECTED))) {
             throw new BusinessException(ErrorCode.CONNECTION_ALREADY_EXISTS);
         }
-
-        if (connectionRepository.countBySubjectAndDeletedAtIsNull(subject) >= 5) {
-            throw new BusinessException(ErrorCode.GUARDIAN_LIMIT_EXCEEDED);
-        }
-
-        User guardian = userService.findByPhone(reqDto.getGuardianPhone()).orElse(null);
-        ConnectionStatus status = guardian != null ? ConnectionStatus.CONNECTED : ConnectionStatus.PENDING;
 
         Connection connection = Connection.builder()
                 .subject(subject)
                 .guardian(guardian)
-                .guardianPhone(reqDto.getGuardianPhone())
-                .subjectGivenName(reqDto.getName())
-                .status(status)
+                .guardianPhone(guardian.getPhone())
+                .requester(requester)
+                .subjectGivenName(requester.getRole() == Role.SUBJECT ? reqDto.getName() : null)
+                .guardianGivenName(requester.getRole() == Role.GUARDIAN ? reqDto.getName() : null)
+                .status(ConnectionStatus.PENDING)
                 .build();
         connectionRepository.save(connection);
 
-        return new AddConnectionRespDto(connection);
+        return requester.getRole() == Role.SUBJECT
+                ? AddConnectionRespDto.forSubjectRequester(connection)
+                : AddConnectionRespDto.forGuardianRequester(connection);
     }
 
     @Transactional
-    public void activatePendingConnections(String guardianPhone, User guardian) {
-        List<Connection> pending = connectionRepository.findByGuardianPhoneAndStatusAndDeletedAtIsNull(guardianPhone, ConnectionStatus.PENDING);
-        pending.forEach(c -> c.connectGuardian(guardian));
+    public UpdateConnectionStatusRespDto updateConnectionStatus(Long connectionId, String callerPhone,
+                                                                 UpdateConnectionStatusReqDto reqDto) {
+        Connection connection = findActiveConnectionById(connectionId);
+        User caller = userService.getByPhone(callerPhone);
+
+        validateResponder(connection, caller);
+        validatePendingStatus(connection);
+        ConnectionStatus newStatus = parseStatus(reqDto.getStatus());
+
+        connection.updateStatus(newStatus);
+        return new UpdateConnectionStatusRespDto(connection.getId(), connection.getStatus());
     }
 
     @Transactional(readOnly = true)
@@ -96,24 +107,6 @@ public class ConnectionService {
         connection.softDelete();
     }
 
-    private Connection findActiveConnectionById(Long connectionId) {
-        Connection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CONNECTION_NOT_FOUND));
-        if (connection.getDeletedAt() != null) {
-            throw new BusinessException(ErrorCode.CONNECTION_NOT_FOUND);
-        }
-        return connection;
-    }
-
-    private void validateDeletable(Connection connection, User user) {
-        boolean isSubject = Objects.equals(connection.getSubject().getId(), user.getId());
-        boolean isGuardian = connection.getGuardian() != null
-                && Objects.equals(connection.getGuardian().getId(), user.getId());
-        if (!isSubject && !isGuardian) {
-            throw new BusinessException(ErrorCode.CONNECTION_DELETE_FORBIDDEN);
-        }
-    }
-
     @Transactional
     public void deleteAllByUser(User user) {
         connectionRepository.deleteBySubjectOrGuardian(user, user);
@@ -137,6 +130,48 @@ public class ConnectionService {
             }
             connection.updateGuardianGivenName(reqDto.getName());
             return UpdateConnectionNameRespDto.forGuardian(connection);
+        }
+    }
+
+    private void validateRoles(User requester, User target) {
+        if (requester.getRole() == target.getRole()) {
+            throw new BusinessException(ErrorCode.INVALID_CONNECTION_ROLES);
+        }
+    }
+
+    private void validateResponder(Connection connection, User caller) {
+        if (Objects.equals(connection.getRequester().getId(), caller.getId())) {
+            throw new BusinessException(ErrorCode.CONNECTION_RESPONDER_ONLY);
+        }
+    }
+
+    private void validatePendingStatus(Connection connection) {
+        if (connection.getStatus() != ConnectionStatus.PENDING) {
+            throw new BusinessException(ErrorCode.CONNECTION_ALREADY_PROCESSED);
+        }
+    }
+
+    private ConnectionStatus parseStatus(String status) {
+        if ("CONNECTED".equals(status)) return ConnectionStatus.CONNECTED;
+        if ("REJECTED".equals(status)) return ConnectionStatus.REJECTED;
+        throw new BusinessException(ErrorCode.INVALID_STATUS);
+    }
+
+    private Connection findActiveConnectionById(Long connectionId) {
+        Connection connection = connectionRepository.findById(connectionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CONNECTION_NOT_FOUND));
+        if (connection.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.CONNECTION_NOT_FOUND);
+        }
+        return connection;
+    }
+
+    private void validateDeletable(Connection connection, User user) {
+        boolean isSubject = Objects.equals(connection.getSubject().getId(), user.getId());
+        boolean isGuardian = connection.getGuardian() != null
+                && Objects.equals(connection.getGuardian().getId(), user.getId());
+        if (!isSubject && !isGuardian) {
+            throw new BusinessException(ErrorCode.CONNECTION_DELETE_FORBIDDEN);
         }
     }
 }
