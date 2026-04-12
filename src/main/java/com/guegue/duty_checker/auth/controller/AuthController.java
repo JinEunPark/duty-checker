@@ -6,14 +6,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,17 +81,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(reqDto));
     }
 
-    @Operation(summary = "로그아웃", description = "현재 사용자의 Refresh Token을 무효화하여 로그아웃 처리합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
-            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
-    })
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal String phone) {
-        authService.logout(phone);
-        return ResponseEntity.ok().build();
-    }
-
     @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
@@ -102,17 +89,5 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenRespDto> refresh(@Valid @RequestBody RefreshTokenReqDto reqDto) {
         return ResponseEntity.ok(authService.refresh(reqDto));
-    }
-
-    @Operation(summary = "회원탈퇴", description = "현재 인증된 사용자의 계정을 탈퇴 처리합니다. 소프트 삭제 방식으로 처리되며, 연관 데이터(연결, 체크인)가 삭제되고 토큰이 무효화됩니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "회원탈퇴 성공"),
-            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
-    })
-    @SecurityRequirement(name = "BearerAuth")
-    @DeleteMapping("/me")
-    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal String phone) {
-        authService.withdraw(phone);
-        return ResponseEntity.ok().build();
     }
 }
