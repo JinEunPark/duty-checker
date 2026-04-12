@@ -32,5 +32,12 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 | 2026-03-29 | 전화번호+SMS 인증 | 피그마 설계 확정 |
 | 2026-03-29 | 보호자 알림 = FCM 푸시 | 앱 타겟, SMS 대비 비용 효율 |
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260412-s78 | connections api 개선 이슈 생성 | 2026-04-12 | 6575d31 | [260412-s78-connections-api](./quick/260412-s78-connections-api/) |
+
 ---
 *State initialized: 2026-03-29*
+*Last activity: 2026-04-12 - Completed quick task 260412-s78: connections api 개선 이슈 생성*
