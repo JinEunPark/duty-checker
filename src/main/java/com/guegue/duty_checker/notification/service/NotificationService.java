@@ -30,6 +30,17 @@ public class NotificationService {
     private final NotificationLogRepository notificationLogRepository;
     private final FcmProvider fcmProvider;
 
+    public void sendConnectionRequestAlert(User target, User requester) {
+        if (target.getFcmToken() == null) {
+            return;
+        }
+        fcmProvider.send(
+                target.getFcmToken(),
+                "연결 신청이 왔습니다",
+                requester.getPhone() + "님이 연결을 신청했습니다."
+        );
+    }
+
     @Transactional
     public void sendMissingCheckInAlerts() {
         ZonedDateTime now = ZonedDateTime.now(KST);
