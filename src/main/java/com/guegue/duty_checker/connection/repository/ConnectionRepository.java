@@ -8,17 +8,17 @@ import java.util.List;
 
 public interface ConnectionRepository extends JpaRepository<Connection, Long> {
 
-    List<Connection> findBySubject(User subject);
+    List<Connection> findBySubjectAndDeletedAtIsNull(User subject);
 
-    List<Connection> findByGuardian(User guardian);
+    List<Connection> findByGuardianAndDeletedAtIsNull(User guardian);
 
     List<Connection> findByStatus(com.guegue.duty_checker.connection.domain.ConnectionStatus status);
 
-    boolean existsBySubjectAndGuardianPhone(User subject, String guardianPhone);
+    boolean existsBySubjectAndGuardianPhoneAndDeletedAtIsNull(User subject, String guardianPhone);
 
-    long countBySubject(User subject);
+    long countBySubjectAndDeletedAtIsNull(User subject);
 
-    List<Connection> findByGuardianPhoneAndStatus(String guardianPhone, com.guegue.duty_checker.connection.domain.ConnectionStatus status);
+    List<Connection> findByGuardianPhoneAndStatusAndDeletedAtIsNull(String guardianPhone, com.guegue.duty_checker.connection.domain.ConnectionStatus status);
 
     void deleteBySubjectOrGuardian(User subject, User guardian);
 }
