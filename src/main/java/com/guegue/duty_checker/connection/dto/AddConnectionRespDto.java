@@ -12,12 +12,26 @@ public class AddConnectionRespDto {
     private final String name;
     private final ConnectionStatus status;
 
-    public AddConnectionRespDto(Connection connection) {
-        this.id = connection.getId();
-        this.phone = connection.getGuardianPhone();
-        this.name = connection.getSubjectGivenName() != null
+    private AddConnectionRespDto(Long id, String phone, String name, ConnectionStatus status) {
+        this.id = id;
+        this.phone = phone;
+        this.name = name;
+        this.status = status;
+    }
+
+    public static AddConnectionRespDto forSubjectRequester(Connection connection) {
+        String phone = connection.getGuardian().getPhone();
+        String name = connection.getSubjectGivenName() != null
                 ? connection.getSubjectGivenName()
-                : connection.getGuardianPhone();
-        this.status = connection.getStatus();
+                : phone;
+        return new AddConnectionRespDto(connection.getId(), phone, name, connection.getStatus());
+    }
+
+    public static AddConnectionRespDto forGuardianRequester(Connection connection) {
+        String phone = connection.getSubject().getPhone();
+        String name = connection.getGuardianGivenName() != null
+                ? connection.getGuardianGivenName()
+                : phone;
+        return new AddConnectionRespDto(connection.getId(), phone, name, connection.getStatus());
     }
 }

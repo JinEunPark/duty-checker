@@ -30,6 +30,10 @@ public class Connection {
     @Column(nullable = false, length = 20)
     private String guardianPhone;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requester_id", nullable = false)
+    private User requester;
+
     @Column(length = 20)
     private String subjectGivenName;
 
@@ -46,12 +50,13 @@ public class Connection {
     private LocalDateTime deletedAt;
 
     @Builder
-    public Connection(User subject, User guardian, String guardianPhone,
+    public Connection(User subject, User guardian, String guardianPhone, User requester,
                       String subjectGivenName, String guardianGivenName,
                       ConnectionStatus status) {
         this.subject = subject;
         this.guardian = guardian;
         this.guardianPhone = guardianPhone;
+        this.requester = requester;
         this.subjectGivenName = subjectGivenName;
         this.guardianGivenName = guardianGivenName;
         this.status = status;
@@ -68,6 +73,10 @@ public class Connection {
 
     public void updateGuardianGivenName(String name) {
         this.guardianGivenName = name;
+    }
+
+    public void updateStatus(ConnectionStatus status) {
+        this.status = status;
     }
 
     public void connectGuardian(User guardian) {

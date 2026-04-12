@@ -54,6 +54,7 @@ class NotificationServiceTest {
                 .subject(subject)
                 .guardian(guardian)
                 .guardianPhone(guardian.getPhone())
+                .requester(subject)
                 .status(ConnectionStatus.CONNECTED)
                 .build();
     }

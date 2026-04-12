@@ -71,7 +71,6 @@ public class AuthService {
                 .role(reqDto.getRole())
                 .build();
         userService.save(user);
-        connectionService.activatePendingConnections(phone, user);
 
         return new RegisterRespDto(user);
     }
