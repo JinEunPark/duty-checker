@@ -15,6 +15,7 @@ import com.guegue.duty_checker.connection.dto.UpdateConnectionNameRespDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionStatusReqDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionStatusRespDto;
 import com.guegue.duty_checker.connection.repository.ConnectionRepository;
+import com.guegue.duty_checker.notification.service.NotificationService;
 import com.guegue.duty_checker.user.domain.Role;
 import com.guegue.duty_checker.user.domain.User;
 import com.guegue.duty_checker.user.service.UserService;
@@ -32,6 +33,7 @@ public class ConnectionService {
     private final ConnectionRepository connectionRepository;
     private final UserService userService;
     private final CheckInService checkInService;
+    private final NotificationService notificationService;
 
     @Transactional
     public AddConnectionRespDto addConnection(String requesterPhone, AddConnectionReqDto reqDto) {
@@ -59,6 +61,7 @@ public class ConnectionService {
                 .status(ConnectionStatus.PENDING)
                 .build();
         connectionRepository.save(connection);
+        notificationService.sendConnectionRequestAlert(target, requester);
 
         return requester.getRole() == Role.SUBJECT
                 ? AddConnectionRespDto.forSubjectRequester(connection)

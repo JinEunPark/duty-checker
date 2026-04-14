@@ -10,6 +10,7 @@ import com.guegue.duty_checker.connection.dto.AddConnectionReqDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionNameReqDto;
 import com.guegue.duty_checker.connection.dto.UpdateConnectionStatusReqDto;
 import com.guegue.duty_checker.connection.repository.ConnectionRepository;
+import com.guegue.duty_checker.notification.service.NotificationService;
 import com.guegue.duty_checker.user.domain.Role;
 import com.guegue.duty_checker.user.domain.User;
 import com.guegue.duty_checker.user.service.UserService;
@@ -37,6 +38,7 @@ class ConnectionServiceTest {
     @Mock ConnectionRepository connectionRepository;
     @Mock UserService userService;
     @Mock CheckInService checkInService;
+    @Mock NotificationService notificationService;
 
     private User user(String phone, Role role) {
         User u = User.builder().phone(phone).password("pw").role(role).build();
