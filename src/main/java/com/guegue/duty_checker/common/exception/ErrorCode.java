@@ -16,6 +16,7 @@ public enum ErrorCode {
     AUTH_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다"),
     ALREADY_REGISTERED(HttpStatus.CONFLICT, "ALREADY_REGISTERED", "이미 가입된 전화번호입니다"),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "INVALID_PASSWORD", "비밀번호가 올바르지 않습니다"),
+    PHONE_NOT_VERIFIED(HttpStatus.UNAUTHORIZED, "PHONE_NOT_VERIFIED", "전화번호 인증이 필요합니다"),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "refreshToken이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요."),
 
     // User

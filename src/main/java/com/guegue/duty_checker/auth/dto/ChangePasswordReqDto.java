@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ChangePasswordReqDto {
 
-    @NotBlank(message = "현재 비밀번호를 입력해주세요")
-    private String currentPassword;
+    @NotBlank(message = "전화번호를 입력해주세요")
+    private String phone;
 
     @NotBlank(message = "새 비밀번호를 입력해주세요")
     private String newPassword;
