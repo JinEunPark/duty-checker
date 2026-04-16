@@ -207,6 +207,39 @@ class AuthServiceTest {
         assertThat(resp.getRefreshToken()).isEqualTo("new-refresh");
     }
 
+    // ─── changePassword ────────────────────────────────────────────────────
+
+    private ChangePasswordReqDto changePasswordReq(String currentPassword, String newPassword) {
+        ChangePasswordReqDto dto = new ChangePasswordReqDto();
+        ReflectionTestUtils.setField(dto, "currentPassword", currentPassword);
+        ReflectionTestUtils.setField(dto, "newPassword", newPassword);
+        return dto;
+    }
+
+    @Test
+    void changePassword_현재비밀번호불일치_예외발생() {
+        User u = user("01011111111", Role.SUBJECT);
+        given(userService.getByPhone("01011111111")).willReturn(u);
+        given(passwordEncoder.matches("wrong", "encoded")).willReturn(false);
+
+        assertThatThrownBy(() -> authService.changePassword("01011111111", changePasswordReq("wrong", "new")))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_PASSWORD);
+    }
+
+    @Test
+    void changePassword_정상_새비밀번호로업데이트() {
+        User u = user("01011111111", Role.SUBJECT);
+        given(userService.getByPhone("01011111111")).willReturn(u);
+        given(passwordEncoder.matches("current", "encoded")).willReturn(true);
+        given(passwordEncoder.encode("new")).willReturn("new-encoded");
+
+        authService.changePassword("01011111111", changePasswordReq("current", "new"));
+
+        verify(passwordEncoder).encode("new");
+    }
+
     // ─── withdraw ──────────────────────────────────────────────────────────
 
     @Test
