@@ -17,16 +17,16 @@ public class ConnectionItemDto {
     private final ZonedDateTime latestCheckedAt;
     private final Boolean isTodayChecked;
 
-    @Schema(description = "현재 사용자가 연결 요청을 보낸 쪽이면 true, 요청을 받은 쪽이면 false")
-    private final Boolean isRequester;
+    @Schema(description = "현재 사용자가 이 연결을 신청한 쪽이면 true, 신청을 받은 쪽이면 false")
+    private final Boolean sentByMe;
 
     public static ConnectionItemDto forSubject(Connection connection, Long currentUserId) {
         String phone = connection.getGuardianPhone();
         String name = connection.getSubjectGivenName() != null
                 ? connection.getSubjectGivenName()
                 : phone;
-        boolean isRequester = connection.getRequester().getId().equals(currentUserId);
-        return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), null, null, isRequester);
+        boolean sentByMe = connection.getRequester().getId().equals(currentUserId);
+        return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), null, null, sentByMe);
     }
 
     public static ConnectionItemDto forGuardian(Connection connection, ZonedDateTime latestCheckedAt, boolean isTodayChecked, Long currentUserId) {
@@ -34,21 +34,21 @@ public class ConnectionItemDto {
         String name = connection.getGuardianGivenName() != null
                 ? connection.getGuardianGivenName()
                 : phone;
-        boolean isRequester = connection.getRequester().getId().equals(currentUserId);
-        return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), latestCheckedAt, isTodayChecked, isRequester);
+        boolean sentByMe = connection.getRequester().getId().equals(currentUserId);
+        return new ConnectionItemDto(connection.getId(), phone, name, connection.getStatus(), latestCheckedAt, isTodayChecked, sentByMe);
     }
 
     private ConnectionItemDto(Long id, String phone, String name,
                                ConnectionStatus status,
                                ZonedDateTime latestCheckedAt,
                                Boolean isTodayChecked,
-                               Boolean isRequester) {
+                               Boolean sentByMe) {
         this.id = id;
         this.phone = phone;
         this.name = name;
         this.status = status;
         this.latestCheckedAt = latestCheckedAt;
         this.isTodayChecked = isTodayChecked;
-        this.isRequester = isRequester;
+        this.sentByMe = sentByMe;
     }
 }
