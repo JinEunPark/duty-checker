@@ -37,7 +37,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260412-s78 | connections api 개선 이슈 생성 | 2026-04-12 | 6575d31 | [260412-s78-connections-api](./quick/260412-s78-connections-api/) |
+| 260416-wwz | ConnectionItemDto에 isRequester 필드 추가 | 2026-04-16 | 70e0d5f | [260416-wwz-connectionitemdto-isrequester](./quick/260416-wwz-connectionitemdto-isrequester/) |
+| 260416-x1w | 비밀번호 변경 API 구현 | 2026-04-16 | 84d916e | [260416-x1w-api](./.planning/quick/260416-x1w-api/) |
 
 ---
 *State initialized: 2026-03-29*
-*Last activity: 2026-04-12 - Completed quick task 260412-s78: connections api 개선 이슈 생성*
+*Last activity: 2026-04-16 - Completed quick task 260416-x1w: 비밀번호 변경 API 구현*

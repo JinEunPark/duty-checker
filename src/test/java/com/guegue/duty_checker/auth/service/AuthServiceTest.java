@@ -209,35 +209,34 @@ class AuthServiceTest {
 
     // ─── changePassword ────────────────────────────────────────────────────
 
-    private ChangePasswordReqDto changePasswordReq(String currentPassword, String newPassword) {
+    private ChangePasswordReqDto changePasswordReq(String phone, String newPassword) {
         ChangePasswordReqDto dto = new ChangePasswordReqDto();
-        ReflectionTestUtils.setField(dto, "currentPassword", currentPassword);
+        ReflectionTestUtils.setField(dto, "phone", phone);
         ReflectionTestUtils.setField(dto, "newPassword", newPassword);
         return dto;
     }
 
     @Test
-    void changePassword_현재비밀번호불일치_예외발생() {
-        User u = user("01011111111", Role.SUBJECT);
-        given(userService.getByPhone("01011111111")).willReturn(u);
-        given(passwordEncoder.matches("wrong", "encoded")).willReturn(false);
+    void changePassword_전화번호미인증_예외발생() {
+        given(verifiedPhoneRedisRepository.isVerified("01011111111")).willReturn(false);
 
-        assertThatThrownBy(() -> authService.changePassword("01011111111", changePasswordReq("wrong", "new")))
+        assertThatThrownBy(() -> authService.changePassword(changePasswordReq("01011111111", "new")))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_PASSWORD);
+                .isEqualTo(ErrorCode.PHONE_NOT_VERIFIED);
     }
 
     @Test
     void changePassword_정상_새비밀번호로업데이트() {
         User u = user("01011111111", Role.SUBJECT);
+        given(verifiedPhoneRedisRepository.isVerified("01011111111")).willReturn(true);
         given(userService.getByPhone("01011111111")).willReturn(u);
-        given(passwordEncoder.matches("current", "encoded")).willReturn(true);
         given(passwordEncoder.encode("new")).willReturn("new-encoded");
 
-        authService.changePassword("01011111111", changePasswordReq("current", "new"));
+        authService.changePassword(changePasswordReq("01011111111", "new"));
 
         verify(passwordEncoder).encode("new");
+        verify(verifiedPhoneRedisRepository).delete("01011111111");
     }
 
     // ─── withdraw ──────────────────────────────────────────────────────────
