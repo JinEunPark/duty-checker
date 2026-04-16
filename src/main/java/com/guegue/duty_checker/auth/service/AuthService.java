@@ -118,6 +118,19 @@ public class AuthService {
     }
 
     @Transactional
+    public void changePassword(String phone, ChangePasswordReqDto reqDto) {
+        User user = userService.getByPhone(phone);
+        validateCurrentPassword(reqDto.getCurrentPassword(), user.getPassword());
+        user.updatePassword(passwordEncoder.encode(reqDto.getNewPassword()));
+    }
+
+    private void validateCurrentPassword(String rawPassword, String encodedPassword) {
+        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+    }
+
+    @Transactional
     public void withdraw(String phone) {
         User user = userService.getByPhone(phone);
         refreshTokenRedisRepository.deleteByPhone(phone);

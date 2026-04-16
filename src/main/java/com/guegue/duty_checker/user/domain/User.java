@@ -53,6 +53,10 @@ public class User {
         this.fcmToken = null;
     }
 
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
     public void withdraw() {
         this.deletedAt = LocalDateTime.now();
         this.phone = "deleted_" + System.currentTimeMillis() + "_" + this.phone;
