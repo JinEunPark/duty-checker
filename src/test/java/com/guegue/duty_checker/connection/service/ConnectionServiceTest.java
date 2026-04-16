@@ -234,8 +234,8 @@ class ConnectionServiceTest {
 
     @Test
     void getConnections_당사자_본인연결목록반환() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
         Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01011111111")).willReturn(subject);
         given(connectionRepository.findBySubjectAndDeletedAtIsNull(subject)).willReturn(List.of(conn));
@@ -248,8 +248,8 @@ class ConnectionServiceTest {
 
     @Test
     void getConnections_보호자_담당연결목록반환() {
-        User subject = user("01011111111", Role.SUBJECT);
-        User guardian = user("01022222222", Role.GUARDIAN);
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
         Connection conn = connection(subject, guardian, subject, ConnectionStatus.CONNECTED);
         given(userService.getByPhone("01022222222")).willReturn(guardian);
         given(connectionRepository.findByGuardianAndDeletedAtIsNull(guardian)).willReturn(List.of(conn));

@@ -88,14 +88,14 @@ public class ConnectionService {
 
         if (user.getRole() == Role.SUBJECT) {
             List<ConnectionItemDto> items = connectionRepository.findBySubjectAndDeletedAtIsNull(user).stream()
-                    .map(ConnectionItemDto::forSubject)
+                    .map(connection -> ConnectionItemDto.forSubject(connection, user.getId()))
                     .toList();
             return new GetConnectionsRespDto(Role.GUARDIAN, items);
         } else {
             List<ConnectionItemDto> items = connectionRepository.findByGuardianAndDeletedAtIsNull(user).stream()
                     .map(connection -> {
                         GetLatestCheckInRespDto checkIn = checkInService.getLatestCheckInBySubject(connection.getSubject());
-                        return ConnectionItemDto.forGuardian(connection, checkIn.getLatestCheckedAt(), checkIn.isTodayChecked());
+                        return ConnectionItemDto.forGuardian(connection, checkIn.getLatestCheckedAt(), checkIn.isTodayChecked(), user.getId());
                     })
                     .toList();
             return new GetConnectionsRespDto(Role.SUBJECT, items);
