@@ -262,6 +262,38 @@ class ConnectionServiceTest {
         assertThat(resp.getConnections()).hasSize(1);
     }
 
+    @Test
+    void getConnections_requesterNull인레거시연결_NPE없이requesterRoleNull반환() {
+        // requester_id가 NULL인 레거시 DB 데이터 시뮬레이션
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, null, ConnectionStatus.CONNECTED);
+        given(userService.getByPhone("01011111111")).willReturn(subject);
+        given(connectionRepository.findBySubjectAndDeletedAtIsNull(subject)).willReturn(List.of(conn));
+
+        var resp = connectionService.getConnections("01011111111");
+
+        assertThat(resp.getConnections()).hasSize(1);
+        assertThat(resp.getConnections().get(0).getRequesterRole()).isNull();
+    }
+
+    @Test
+    void getConnections_보호자_requesterNull인레거시연결_NPE없이requesterRoleNull반환() {
+        // 보호자 조회 시 requester_id가 NULL인 레거시 DB 데이터 시뮬레이션
+        User subject = userWithId("01011111111", Role.SUBJECT, 1L);
+        User guardian = userWithId("01022222222", Role.GUARDIAN, 2L);
+        Connection conn = connection(subject, guardian, null, ConnectionStatus.CONNECTED);
+        given(userService.getByPhone("01022222222")).willReturn(guardian);
+        given(connectionRepository.findByGuardianAndDeletedAtIsNull(guardian)).willReturn(List.of(conn));
+        given(checkInService.getLatestCheckInBySubject(subject))
+                .willReturn(new GetLatestCheckInRespDto(null, false));
+
+        var resp = connectionService.getConnections("01022222222");
+
+        assertThat(resp.getConnections()).hasSize(1);
+        assertThat(resp.getConnections().get(0).getRequesterRole()).isNull();
+    }
+
     // ─── deleteConnection ─────────────────────────────────────────────────────
 
     @Test
