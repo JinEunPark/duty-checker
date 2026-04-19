@@ -31,9 +31,6 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(length = 200)
-    private String fcmToken;
-
     @Column
     private LocalDateTime deletedAt;
 
@@ -45,14 +42,6 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    public void updateFcmToken(String fcmToken) {
-        this.fcmToken = fcmToken;
-    }
-
-    public void clearFcmToken() {
-        this.fcmToken = null;
-    }
-
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
     }
@@ -60,6 +49,5 @@ public class User {
     public void withdraw() {
         this.deletedAt = LocalDateTime.now();
         this.phone = "deleted_" + System.currentTimeMillis() + "_" + this.phone;
-        this.fcmToken = null;
     }
 }

@@ -11,6 +11,7 @@ import com.guegue.duty_checker.common.exception.BusinessException;
 import com.guegue.duty_checker.common.exception.ErrorCode;
 import com.guegue.duty_checker.connection.service.ConnectionService;
 import com.guegue.duty_checker.user.domain.User;
+import com.guegue.duty_checker.user.service.UserFcmTokenService;
 import com.guegue.duty_checker.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ public class AuthService {
     private final SmsProvider smsProvider;
     private final JwtProvider jwtProvider;
     private final UserService userService;
+    private final UserFcmTokenService userFcmTokenService;
     private final ConnectionService connectionService;
     private final CheckInService checkInService;
     private final PasswordEncoder passwordEncoder;
@@ -95,7 +97,7 @@ public class AuthService {
 
     public void logout(String phone) {
         refreshTokenRedisRepository.deleteByPhone(phone);
-        userService.clearFcmToken(phone);
+        userService.findByPhone(phone).ifPresent(userFcmTokenService::deleteAllByUser);
     }
 
     public RefreshTokenRespDto refresh(RefreshTokenReqDto reqDto) {
