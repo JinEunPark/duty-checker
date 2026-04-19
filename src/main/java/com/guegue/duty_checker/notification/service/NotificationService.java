@@ -8,6 +8,7 @@ import com.guegue.duty_checker.notification.domain.NotificationLog;
 import com.guegue.duty_checker.notification.infrastructure.FcmProvider;
 import com.guegue.duty_checker.notification.repository.NotificationLogRepository;
 import com.guegue.duty_checker.user.domain.User;
+import com.guegue.duty_checker.user.service.UserFcmTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,16 +30,20 @@ public class NotificationService {
     private final CheckInService checkInService;
     private final NotificationLogRepository notificationLogRepository;
     private final FcmProvider fcmProvider;
+    private final UserFcmTokenService userFcmTokenService;
 
     public void sendConnectionRequestAlert(User target, User requester) {
-        if (target.getFcmToken() == null) {
+        List<String> tokens = userFcmTokenService.getTokensByUser(target);
+        if (tokens.isEmpty()) {
             return;
         }
-        fcmProvider.send(
-                target.getFcmToken(),
-                "연결 신청이 왔습니다",
-                requester.getPhone() + "님이 연결을 신청했습니다."
-        );
+        for (String token : tokens) {
+            fcmProvider.send(
+                    token,
+                    "연결 신청이 왔습니다",
+                    requester.getPhone() + "님이 연결을 신청했습니다."
+            );
+        }
     }
 
     @Transactional
@@ -53,7 +58,8 @@ public class NotificationService {
             User subject = connection.getSubject();
             User guardian = connection.getGuardian();
 
-            if (guardian.getFcmToken() == null) {
+            List<String> guardianTokens = userFcmTokenService.getTokensByUser(guardian);
+            if (guardianTokens.isEmpty()) {
                 continue;
             }
 
@@ -74,11 +80,13 @@ public class NotificationService {
                     ? connection.getGuardianGivenName()
                     : subject.getPhone();
 
-            fcmProvider.send(
-                    guardian.getFcmToken(),
-                    "안부 확인 알림",
-                    displayName + "님이 24시간 동안 안부 확인을 하지 않았습니다."
-            );
+            for (String token : guardianTokens) {
+                fcmProvider.send(
+                        token,
+                        "안부 확인 알림",
+                        displayName + "님이 24시간 동안 안부 확인을 하지 않았습니다."
+                );
+            }
 
             notificationLogRepository.save(NotificationLog.builder()
                     .subject(subject)

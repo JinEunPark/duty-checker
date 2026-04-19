@@ -2,6 +2,7 @@ package com.guegue.duty_checker.user.controller;
 
 import com.guegue.duty_checker.auth.service.AuthService;
 import com.guegue.duty_checker.user.dto.UpdateDeviceTokenReqDto;
+import com.guegue.duty_checker.user.service.UserFcmTokenService;
 import com.guegue.duty_checker.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,11 +23,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserFcmTokenService userFcmTokenService;
     private final AuthService authService;
 
-    @Operation(summary = "FCM 디바이스 토큰 업데이트", description = "푸시 알림 수신을 위한 FCM 디바이스 토큰을 등록하거나 갱신합니다.")
+    @Operation(summary = "FCM 디바이스 토큰 등록", description = "푸시 알림 수신을 위한 FCM 디바이스 토큰을 등록합니다. 이미 등록된 토큰은 중복 저장되지 않습니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "토큰 업데이트 성공"),
+            @ApiResponse(responseCode = "200", description = "토큰 등록 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
     })
@@ -34,7 +36,7 @@ public class UserController {
     public ResponseEntity<Void> updateDeviceToken(
             @AuthenticationPrincipal String phone,
             @Valid @RequestBody UpdateDeviceTokenReqDto reqDto) {
-        userService.updateFcmToken(phone, reqDto.getFcmToken());
+        userFcmTokenService.saveToken(userService.getByPhone(phone), reqDto.getFcmToken());
         return ResponseEntity.ok().build();
     }
 

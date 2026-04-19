@@ -36,16 +36,6 @@ public class UserService {
     }
 
     @Transactional
-    public void updateFcmToken(String phone, String fcmToken) {
-        getByPhone(phone).updateFcmToken(fcmToken);
-    }
-
-    @Transactional
-    public void clearFcmToken(String phone) {
-        getByPhone(phone).clearFcmToken();
-    }
-
-    @Transactional
     public void deleteUser(String phone) {
         getByPhone(phone).withdraw();
     }

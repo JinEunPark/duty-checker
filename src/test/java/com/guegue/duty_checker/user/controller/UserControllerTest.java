@@ -4,6 +4,7 @@ import com.guegue.duty_checker.auth.infrastructure.RefreshTokenRedisRepository;
 import com.guegue.duty_checker.auth.infrastructure.SmsCodeRedisRepository;
 import com.guegue.duty_checker.auth.infrastructure.VerifiedPhoneRedisRepository;
 import com.guegue.duty_checker.auth.service.AuthService;
+import com.guegue.duty_checker.user.service.UserFcmTokenService;
 import com.guegue.duty_checker.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private UserFcmTokenService userFcmTokenService;
 
     @MockitoBean
     private AuthService authService;
