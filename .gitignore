@@ -30,3 +30,9 @@ out/
 
 ### Environment ###
 .env
+
+### Local config ###
+src/main/resources/application-local.yaml
+
+### Planning ###
+.planning/
