@@ -57,6 +57,9 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET}
+      - COOLSMS_API_KEY=${COOLSMS_API_KEY}
+      - COOLSMS_API_SECRET_KEY=${COOLSMS_API_SECRET_KEY}
+      - COOLSMS_FROM_NUM=${COOLSMS_FROM_NUM}
     depends_on:
       mysql:
         condition: service_healthy

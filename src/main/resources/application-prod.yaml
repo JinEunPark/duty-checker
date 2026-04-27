@@ -22,6 +22,14 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
 
+coolsms:
+  api:
+    key: ${COOLSMS_API_KEY}
+    secret:
+      key: ${COOLSMS_API_SECRET_KEY}
+    domain: https://api.coolsms.co.kr
+    from-num: ${COOLSMS_FROM_NUM}
+
 logging:
   level:
     com.guegue.duty_checker: INFO

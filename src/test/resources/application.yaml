@@ -19,3 +19,11 @@ jwt:
   secret: test-secret-key-must-be-at-least-256-bits-long-for-hs256
   access-expiration-ms: 3600000
   refresh-expiration-ms: 7776000000
+
+coolsms:
+  api:
+    key: test-api-key
+    secret:
+      key: test-api-secret-key
+    domain: https://api.coolsms.co.kr
+    from-num: 01000000000
