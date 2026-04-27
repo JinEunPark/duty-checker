@@ -50,14 +50,14 @@ public class AuthController {
 
     @Operation(summary = "인증 코드 검증", description = "발송된 SMS 인증 코드의 유효성을 검증합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "인증 코드 검증 성공"),
+            @ApiResponse(responseCode = "200", description = "인증 코드 검증 성공"),
             @ApiResponse(responseCode = "400", description = "인증 코드 불일치 또는 만료"),
             @ApiResponse(responseCode = "429", description = "인증 시도 횟수 초과")
     })
     @PostMapping("/verify-code")
     public ResponseEntity<Void> verifyCode(@Valid @RequestBody VerifyCodeReqDto reqDto) {
         authService.verifyCode(reqDto);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "회원가입", description = "전화번호로 신규 회원을 등록합니다.")

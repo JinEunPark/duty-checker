@@ -108,13 +108,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void verifyCode_정상요청_204반환() throws Exception {
+    void verifyCode_정상요청_200반환() throws Exception {
         mockMvc.perform(post("/api/v1/auth/verify-code")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "phone": "01012345678", "verificationCode": "123456" }
                                 """))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
     }
 
     @Test
