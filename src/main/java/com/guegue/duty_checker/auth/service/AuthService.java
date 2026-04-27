@@ -54,8 +54,21 @@ public class AuthService {
     }
 
     public void verifyCode(VerifyCodeReqDto reqDto) {
-        // SMS 발송 미구현으로 인해 코드 검증 없이 항상 인증 성공 처리
-        verifiedPhoneRedisRepository.save(reqDto.getPhone());
+        String phone = reqDto.getPhone();
+        String inputCode = reqDto.getVerificationCode();
+
+        String savedCode = smsCodeRedisRepository.findCode(phone)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_CODE_EXPIRED));
+
+        if (!savedCode.equals(inputCode)) {
+            if (smsCodeRedisRepository.incrementAttemptsAndCheckExceeded(phone)) {
+                throw new BusinessException(ErrorCode.AUTH_CODE_ATTEMPTS_EXCEEDED);
+            }
+            throw new BusinessException(ErrorCode.AUTH_CODE_MISMATCH);
+        }
+
+        smsCodeRedisRepository.deleteCode(phone);
+        verifiedPhoneRedisRepository.save(phone);
     }
 
     public RegisterRespDto register(RegisterReqDto reqDto) {
