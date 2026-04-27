@@ -30,6 +30,8 @@ out/
 
 ### Environment ###
 .env
+.env.*
+!.env.example
 
 ### Local config ###
 src/main/resources/application-local.yaml

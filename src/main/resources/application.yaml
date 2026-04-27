@@ -6,10 +6,10 @@ spring:
       host: localhost
       port: 6379
   datasource:
-    url: jdbc:mysql://localhost:3306/duty_checker?serverTimezone=Asia/Seoul&useSSL=false&allowPublicKeyRetrieval=true
+    url: ${SPRING_DATASOURCE_URL}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: mypassword
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,17 +19,17 @@ spring:
         format_sql: true
 
 jwt:
-  secret: duty-checker-secret-key-must-be-at-least-256-bits-long-for-hs256
+  secret: ${JWT_SECRET}
   access-expiration-ms: 3600000     # 1시간
   refresh-expiration-ms: 7776000000 # 90일
 
 coolsms:
   api:
-    key: NCS45RRF4Y49A9SG
+    key: ${COOLSMS_API_KEY}
     secret:
-      key: WVA71I31FPMCC246LOZMZMGPUNQGHMJZ
+      key: ${COOLSMS_API_SECRET_KEY}
     domain: https://api.coolsms.co.kr
-    from-num: "01044992038"
+    from-num: ${COOLSMS_FROM_NUM}
 
 server:
   port: 8080
