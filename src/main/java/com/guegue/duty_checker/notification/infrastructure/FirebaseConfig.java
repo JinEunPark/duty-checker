@@ -25,13 +25,17 @@ public class FirebaseConfig {
 
     @Bean
     public FirebaseApp firebaseApp() throws Exception {
+        if (serviceAccountPath == null || serviceAccountPath.isBlank()) {
+            log.warn("firebase.service-account-path is empty — FCM disabled");
+            return null;
+        }
         if (!FirebaseApp.getApps().isEmpty()) {
             return FirebaseApp.getInstance();
         }
         Resource resource = applicationContext.getResource(serviceAccountPath);
         if (!resource.exists()) {
-            throw new IllegalStateException(
-                "Firebase service account file not found: " + serviceAccountPath);
+            log.warn("Firebase service account file not found: {} — FCM disabled", serviceAccountPath);
+            return null;
         }
         try (InputStream in = resource.getInputStream()) {
             FirebaseOptions options = FirebaseOptions.builder()

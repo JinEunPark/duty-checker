@@ -68,7 +68,7 @@ class NotificationServiceTest {
 
         notificationService.sendConnectionRequestAlert(target, requester);
 
-        verify(fcmProvider).send("token-xyz", "연결 신청이 왔습니다", "01011111111님이 연결을 신청했습니다.");
+        verify(fcmProvider).send("token-xyz", "연결 신청이 도착했어요", "01011111111님이 연결을 신청했어요.");
     }
 
     @Test

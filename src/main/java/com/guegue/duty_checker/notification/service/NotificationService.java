@@ -36,8 +36,8 @@ public class NotificationService {
         }
         fcmProvider.send(
                 target.getFcmToken(),
-                "연결 신청이 왔습니다",
-                requester.getPhone() + "님이 연결을 신청했습니다."
+                "연결 신청이 도착했어요",
+                requester.getPhone() + "님이 연결을 신청했어요."
         );
     }
 
