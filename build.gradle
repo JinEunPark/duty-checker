@@ -47,6 +47,9 @@ dependencies {
 	// SMS
 	implementation 'net.nurigo:sdk:4.3.0'
 
+	// FCM
+	implementation 'com.google.firebase:firebase-admin:9.4.2'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

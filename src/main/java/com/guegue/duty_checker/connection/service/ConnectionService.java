@@ -79,6 +79,9 @@ public class ConnectionService {
         ConnectionStatus newStatus = parseStatus(reqDto.getStatus());
 
         connection.updateStatus(newStatus);
+        if (newStatus == ConnectionStatus.CONNECTED) {
+            notificationService.sendConnectionAcceptedAlert(connection.getRequester(), caller);
+        }
         return new UpdateConnectionStatusRespDto(connection.getId(), connection.getStatus());
     }
 

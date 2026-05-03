@@ -31,6 +31,9 @@ coolsms:
     domain: https://api.coolsms.co.kr
     from-num: ${COOLSMS_FROM_NUM}
 
+firebase:
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:classpath:firebase/service-account.json}
+
 server:
   port: 8080
 
