@@ -81,6 +81,29 @@ class NotificationServiceTest {
         verify(fcmProvider, never()).send(anyString(), anyString(), anyString());
     }
 
+    // ─── sendConnectionAcceptedAlert ──────────────────────────────────────
+
+    @Test
+    void sendConnectionAcceptedAlert_FCM토큰있음_알림발송() {
+        User requester = subject("01011111111");
+        requester.updateFcmToken("token-req");
+        User acceptor = guardianWithToken("01022222222", "token-acc");
+
+        notificationService.sendConnectionAcceptedAlert(requester, acceptor);
+
+        verify(fcmProvider).send("token-req", "연결 신청이 수락됐어요", "01022222222님이 연결 신청을 수락했어요.");
+    }
+
+    @Test
+    void sendConnectionAcceptedAlert_FCM토큰없음_알림스킵() {
+        User requester = subject("01011111111");
+        User acceptor = guardianWithToken("01022222222", "token-acc");
+
+        notificationService.sendConnectionAcceptedAlert(requester, acceptor);
+
+        verify(fcmProvider, never()).send(anyString(), anyString(), anyString());
+    }
+
     // ─── sendMissingCheckInAlerts ──────────────────────────────────────────
 
     @Test

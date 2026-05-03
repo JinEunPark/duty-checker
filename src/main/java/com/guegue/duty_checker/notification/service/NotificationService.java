@@ -41,6 +41,17 @@ public class NotificationService {
         );
     }
 
+    public void sendConnectionAcceptedAlert(User requester, User acceptor) {
+        if (requester.getFcmToken() == null) {
+            return;
+        }
+        fcmProvider.send(
+                requester.getFcmToken(),
+                "연결 신청이 수락됐어요",
+                acceptor.getPhone() + "님이 연결 신청을 수락했어요."
+        );
+    }
+
     @Transactional
     public void sendMissingCheckInAlerts() {
         ZonedDateTime now = ZonedDateTime.now(KST);
